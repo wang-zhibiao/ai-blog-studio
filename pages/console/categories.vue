@@ -20,7 +20,8 @@
 
         <!-- Tab 切换 -->
         <template v-else>
-          <el-tabs v-model="activeTab" class="bg-[rgb(var(--color-surface))] rounded-xl border border-[rgb(var(--color-border))] p-1">
+          <div class="mt-6">
+            <el-tabs v-model="activeTab" class="bg-[rgb(var(--color-surface))] rounded-xl border border-[rgb(var(--color-border))] p-1">
             <!-- 分类管理 -->
             <el-tab-pane label="分类管理" name="categories">
               <div class="p-4">
@@ -100,6 +101,7 @@
               </div>
             </el-tab-pane>
           </el-tabs>
+          </div>
         </template>
       </RepoGuard>
     </div>
@@ -112,7 +114,8 @@ import { Search, Loading } from '@element-plus/icons-vue'
 import { ElMessage } from 'element-plus'
 import ConsoleLayout from '~/components/layout/ConsoleLayout.vue'
 import RepoGuard from '~/components/console/RepoGuard.vue'
-import { useLocalFS, type Article } from '~/composables/useLocalFS'
+import { useLocalFS } from '~/composables/useLocalFS'
+import type { Article } from '~/types/article'
 
 const localFS = useLocalFS()
 
@@ -187,3 +190,10 @@ onMounted(() => {
   loadArticles()
 })
 </script>
+
+<style scoped>
+:deep(.el-tabs__item) {
+  padding-left: 20px;
+  padding-right: 20px;
+}
+</style>

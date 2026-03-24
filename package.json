@@ -14,6 +14,7 @@
     "codemirror": "^6.0.2",
     "element-plus": "^2.8.0",
     "marked": "^12.0.0",
+    "md-editor-v3": "^6.4.1",
     "nuxt": "^4.0.0",
     "pinia": "^2.2.0",
     "suneditor": "^2.46.0",

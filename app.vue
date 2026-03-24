@@ -1,10 +1,11 @@
 <template>
-  <div>
+  <ErrorBoundary>
     <NuxtPage />
-  </div>
+  </ErrorBoundary>
 </template>
 
 <script setup lang="ts">
+import ErrorBoundary from '~/components/common/ErrorBoundary.vue'
 import { useThemeStore } from '~/stores/theme'
 import { useFsStore } from '~/stores/fs'
 import { useRepoStore } from '~/stores/repo'

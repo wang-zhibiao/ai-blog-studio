@@ -1,33 +1,10 @@
 import { useFsStore } from '~/stores/fs'
+import type { Article, ArticleMeta, ContentFormat, MediaFile } from '~/types/article'
+import { generateFileName, parseFileName, generateArticleId, generateExcerpt } from '~/types/article'
 
-export interface ArticleMeta {
-  title: string
-  slug: string
-  createdAt: string
-  updatedAt: string
-  publishedAt: string | null
-  status: 'draft' | 'published'
-  category: string
-  tags: string[]
-  excerpt: string
-}
-
-export interface Article {
-  id: string
-  meta: ArticleMeta
-  content: string
-  dirHandle?: FileSystemDirectoryHandle
-}
-
-export interface MediaFile {
-  id: string
-  name: string
-  type: 'image' | 'video' | 'other'
-  size: number
-  url: string
-  blob?: Blob
-  repo: string
-  uploadTime: string
+// meta.json 存储结构
+interface ArticlesMeta {
+  articles: ArticleMeta[]
 }
 
 export function useLocalFS() {
@@ -64,7 +41,7 @@ export function useLocalFS() {
   // 选择媒体库目录
   const selectMediaDir = async () => {
     if (!isSupported.value) {
-      throw new Error('File System API 不被支持')
+      throw new Error('File System Access API 不被支持')
     }
     try {
       const handle = await window.showDirectoryPicker({
@@ -206,6 +183,89 @@ export function useLocalFS() {
     return 'other'
   }
 
+  // 读取或初始化 meta.json
+  const loadArticlesMeta = async (): Promise<ArticleMeta[]> => {
+    if (!fsStore.articlesDirHandle) {
+      return []
+    }
+
+    try {
+      const metaFile = await fsStore.articlesDirHandle.getFileHandle('meta.json')
+      const file = await metaFile.getFile()
+      const content = await file.text()
+      const data = JSON.parse(content) as ArticlesMeta
+      return data.articles || []
+    } catch {
+      // meta.json 不存在，初始化空数组
+      return []
+    }
+  }
+
+  // 保存 meta.json
+  const saveArticlesMeta = async (articlesMeta: ArticleMeta[]): Promise<void> => {
+    if (!fsStore.articlesDirHandle) {
+      throw new Error('请先配置文章目录')
+    }
+
+    const metaFile = await fsStore.articlesDirHandle.getFileHandle('meta.json', { create: true })
+    const writable = await metaFile.createWritable()
+    await writable.write(JSON.stringify({ articles: articlesMeta }, null, 2))
+    await writable.close()
+  }
+
+  // 从目录中扫描文章文件并初始化 meta.json
+  const scanAndInitMeta = async (): Promise<ArticleMeta[]> => {
+    if (!fsStore.articlesDirHandle) {
+      return []
+    }
+
+    const articlesMeta: ArticleMeta[] = []
+    const now = new Date().toISOString()
+
+    try {
+      // 遍历目录中的所有文件
+      for await (const entry of fsStore.articlesDirHandle.values()) {
+        if (entry.kind === 'file' && (entry.name.endsWith('.md') || entry.name.endsWith('.html'))) {
+          // 解析文件名
+          const parsed = parseFileName(entry.name)
+          if (!parsed) continue
+
+          // 读取文件内容
+          const file = await entry.getFile()
+          const content = await file.text()
+
+          // 创建 meta 数据
+          const meta: ArticleMeta = {
+            id: generateArticleId(),
+            fileName: entry.name,
+            createdAt: parsed.date.toISOString(),
+            updatedAt: new Date(file.lastModified).toISOString(),
+            publishedAt: null,
+            status: 'draft',
+            contentFormat: entry.name.endsWith('.md') ? 'markdown' : 'html',
+            category: parsed.category,
+            tags: [],
+            excerpt: generateExcerpt(content, 200),
+            views: 0,
+            pinned: false,
+            order: 0
+          }
+
+          articlesMeta.push(meta)
+        }
+      }
+
+      // 保存 meta.json
+      if (articlesMeta.length > 0) {
+        await saveArticlesMeta(articlesMeta)
+      }
+    } catch (err) {
+      console.error('扫描文章文件失败:', err)
+    }
+
+    return articlesMeta
+  }
+
   // 读取文章列表
   const loadArticles = async (): Promise<Article[]> => {
     if (!fsStore.articlesDirHandle) {
@@ -215,16 +275,41 @@ export function useLocalFS() {
     const articles: Article[] = []
 
     try {
-      for await (const entry of fsStore.articlesDirHandle.values()) {
-        if (entry.kind === 'directory') {
+      // 从 meta.json 读取元数据
+      let articlesMeta = await loadArticlesMeta()
+
+      // 如果 meta.json 为空，尝试扫描目录并初始化
+      if (articlesMeta.length === 0) {
+        articlesMeta = await scanAndInitMeta()
+      }
+
+      // 遍历元数据，读取每篇文章的内容
+      for (const meta of articlesMeta) {
+        try {
+          // 从文件名解析标题
+          const parsed = parseFileName(meta.fileName)
+          const title = parsed?.title || 'Untitled'
+
+          // 读取内容文件
+          let content = ''
           try {
-            const article = await loadArticle(entry)
-            if (article) {
-              articles.push(article)
-            }
-          } catch (err) {
-            console.warn(`加载文章失败: ${entry.name}`, err)
+            const fileHandle = await fsStore.articlesDirHandle.getFileHandle(meta.fileName)
+            const file = await fileHandle.getFile()
+            content = await file.text()
+          } catch {
+            // 内容文件不存在
+            console.warn(`文章文件不存在: ${meta.fileName}`)
           }
+
+          articles.push({
+            id: meta.id,
+            title,
+            meta,
+            content,
+            dirHandle: fsStore.articlesDirHandle
+          })
+        } catch (err) {
+          console.warn(`加载文章失败: ${meta.fileName}`, err)
         }
       }
     } catch (err) {
@@ -239,102 +324,117 @@ export function useLocalFS() {
     return articles
   }
 
-  // 读取单篇文章
-  const loadArticle = async (dirHandle: FileSystemDirectoryHandle): Promise<Article | null> => {
-    try {
-      // 读取 meta.json
-      const metaFile = await dirHandle.getFileHandle('meta.json')
-      const metaFileData = await metaFile.getFile()
-      const meta = JSON.parse(await metaFileData.text()) as ArticleMeta
-
-      // 读取内容文件（优先 index.md，没有则 index.html）
-      let content = ''
-      try {
-        const mdFile = await dirHandle.getFileHandle('index.md')
-        const mdFileData = await mdFile.getFile()
-        content = await mdFileData.text()
-      } catch {
-        try {
-          const htmlFile = await dirHandle.getFileHandle('index.html')
-          const htmlFileData = await htmlFile.getFile()
-          content = await htmlFileData.text()
-        } catch {
-          // 没有内容文件
-        }
-      }
-
-      return {
-        id: dirHandle.name,
-        meta,
-        content,
-        dirHandle
-      }
-    } catch (err) {
-      console.warn('加载文章失败:', err)
-      return null
-    }
-  }
-
   // 保存文章
   const saveArticle = async (article: Omit<Article, 'dirHandle'>): Promise<Article> => {
     if (!fsStore.articlesDirHandle) {
       throw new Error('请先配置文章目录')
     }
 
-    // 获取或创建文章目录
-    const slug = article.meta.slug || article.id
-    const dirHandle = await fsStore.articlesDirHandle.getDirectoryHandle(slug, { create: true })
-
-    // 更新元数据
     const now = new Date().toISOString()
-    const meta: ArticleMeta = {
-      ...article.meta,
-      slug,
-      updatedAt: now,
-      createdAt: article.meta.createdAt || now,
-      publishedAt: article.meta.status === 'published'
-        ? (article.meta.publishedAt || now)
-        : article.meta.publishedAt
+    const articlesMeta = await loadArticlesMeta()
+
+    // 生成新文件名
+    const newFileName = generateFileName(article.title, article.meta.category, article.meta.createdAt, article.meta.contentFormat)
+
+    // 查找现有文章
+    const existingIndex = articlesMeta.findIndex(m => m.id === article.id)
+
+    let meta: ArticleMeta
+
+    if (existingIndex >= 0) {
+      const oldMeta = articlesMeta[existingIndex]
+      const oldFileName = oldMeta.fileName
+
+      // 如果文件名变化，删除旧文件
+      if (oldFileName !== newFileName) {
+        try {
+          await fsStore.articlesDirHandle.removeEntry(oldFileName)
+        } catch {
+          // 忽略删除失败
+        }
+      }
+
+      // 更新元数据
+      meta = {
+        ...oldMeta,
+        fileName: newFileName,
+        updatedAt: now,
+        publishedAt: article.meta.status === 'published'
+          ? (article.meta.publishedAt || now)
+          : article.meta.publishedAt,
+        status: article.meta.status,
+        contentFormat: article.meta.contentFormat,
+        category: article.meta.category,
+        tags: article.meta.tags,
+        excerpt: article.meta.excerpt,
+        cover: article.meta.cover
+      }
+
+      articlesMeta[existingIndex] = meta
+    } else {
+      // 新增文章
+      meta = {
+        id: article.id || generateArticleId(),
+        fileName: newFileName,
+        createdAt: article.meta.createdAt || now,
+        updatedAt: now,
+        publishedAt: article.meta.status === 'published' ? now : null,
+        status: article.meta.status,
+        contentFormat: article.meta.contentFormat,
+        category: article.meta.category,
+        tags: article.meta.tags,
+        excerpt: article.meta.excerpt,
+        cover: article.meta.cover,
+        views: 0,
+        pinned: false,
+        order: 0
+      }
+
+      articlesMeta.push(meta)
+    }
+
+    // 保存内容文件
+    if (article.content.trim()) {
+      const fileHandle = await fsStore.articlesDirHandle.getFileHandle(newFileName, { create: true })
+      const writable = await fileHandle.createWritable()
+      await writable.write(article.content)
+      await writable.close()
     }
 
     // 保存 meta.json
-    const metaFile = await dirHandle.getFileHandle('meta.json', { create: true })
-    const metaWritable = await metaFile.createWritable()
-    await metaWritable.write(JSON.stringify(meta, null, 2))
-    await metaWritable.close()
-
-    // 保存内容（同时保存 md 和 html 两种格式）
-    if (article.content.trim()) {
-      // 检测内容格式
-      const isHtml = article.content.trim().startsWith('<')
-
-      if (isHtml) {
-        const htmlFile = await dirHandle.getFileHandle('index.html', { create: true })
-        const htmlWritable = await htmlFile.createWritable()
-        await htmlWritable.write(article.content)
-        await htmlWritable.close()
-      } else {
-        const mdFile = await dirHandle.getFileHandle('index.md', { create: true })
-        const mdWritable = await mdFile.createWritable()
-        await mdWritable.write(article.content)
-        await mdWritable.close()
-      }
-    }
+    await saveArticlesMeta(articlesMeta)
 
     return {
       ...article,
-      id: slug,
+      id: meta.id,
       meta,
-      dirHandle
+      dirHandle: fsStore.articlesDirHandle
     }
   }
 
   // 删除文章
-  const deleteArticle = async (slug: string): Promise<void> => {
+  const deleteArticle = async (id: string): Promise<void> => {
     if (!fsStore.articlesDirHandle) {
       throw new Error('请先配置文章目录')
     }
-    await fsStore.articlesDirHandle.removeEntry(slug, { recursive: true })
+
+    const articlesMeta = await loadArticlesMeta()
+    const index = articlesMeta.findIndex(m => m.id === id)
+
+    if (index >= 0) {
+      const meta = articlesMeta[index]
+
+      // 删除内容文件
+      try {
+        await fsStore.articlesDirHandle.removeEntry(meta.fileName)
+      } catch {
+        // 忽略删除失败
+      }
+
+      // 从元数据中移除
+      articlesMeta.splice(index, 1)
+      await saveArticlesMeta(articlesMeta)
+    }
   }
 
   // 保存配置
@@ -358,7 +458,6 @@ export function useLocalFS() {
     deleteMediaFile,
     getFileType,
     loadArticles,
-    loadArticle,
     saveArticle,
     deleteArticle,
     saveConfig

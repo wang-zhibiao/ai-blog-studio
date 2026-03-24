@@ -235,8 +235,8 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, computed } from 'vue'
-import { useRouter } from 'vue-router'
+import { ref, onMounted, computed, watch } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { FolderOpened, CircleCheck, Delete } from '@element-plus/icons-vue'
 import ThemeSwitcher from '~/components/ThemeSwitcher.vue'
@@ -245,6 +245,7 @@ import { useLocalFS } from '~/composables/useLocalFS'
 import { useFsStore } from '~/stores/fs'
 import { useRepoStore, type RepoType } from '~/stores/repo'
 
+const route = useRoute()
 const router = useRouter()
 const activeTab = ref<'theme' | 'repos' | 'ai' | 'user'>('theme')
 const localFS = useLocalFS()
@@ -341,9 +342,21 @@ const saveUserConfig = () => {
 onMounted(async () => {
   fsStore.init()
   repoStore.init()
+
+  // 从 URL 参数初始化标签
+  const tabFromQuery = route.query.tab as string
+  if (tabFromQuery && ['theme', 'repos', 'ai', 'user'].includes(tabFromQuery)) {
+    activeTab.value = tabFromQuery as any
+  }
+
   // 尝试验证当前权限状态并同步到 repoStore
   if (fsStore.articlesDirHandle) {
     await fsStore.verifyArticlesAccess()
   }
+})
+
+// 监听标签变化，更新 URL
+watch(activeTab, (newTab) => {
+  router.replace({ query: { ...route.query, tab: newTab } })
 })
 </script>

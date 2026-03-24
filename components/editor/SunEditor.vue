@@ -16,7 +16,7 @@ interface Props {
 }
 
 const props = withDefaults(defineProps<Props>(), {
-  height: '100%',
+  height: 'calc(100vh - 288px)',
   placeholder: '开始写作...'
 })
 

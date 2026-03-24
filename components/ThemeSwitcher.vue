@@ -34,13 +34,18 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, watch } from 'vue'
 import { useThemeStore, type ThemeColor, type ThemeMode } from '../stores/theme'
 
 const themeStore = useThemeStore()
 const currentColor = computed(() => themeStore.currentColor)
 const currentMode = computed(() => themeStore.currentMode)
 const themeColors = computed(() => Object.keys(themeStore.fullThemeSchemes) as ThemeColor[])
+
+// 确保组件在 store 初始化后重新渲染
+watch(() => themeStore.isInitialized, () => {
+  // 触发重新计算
+})
 
 const getColorPreview = (color: ThemeColor) => {
   const colors = themeStore.fullThemeSchemes[color][currentMode.value]

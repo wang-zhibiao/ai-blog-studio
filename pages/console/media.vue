@@ -8,11 +8,6 @@
           <p class="text-[rgb(var(--color-text-muted))]">管理你的图片和文件，方便在编辑器中使用</p>
         </div>
         <div class="flex items-center gap-3">
-          <el-select v-model="currentRepo" class="w-40">
-            <el-option label="💻 本地存储" value="local" />
-            <el-option label="🐙 GitHub" value="github" />
-            <el-option label="🐱 Gitee" value="gitee" />
-          </el-select>
           <el-button type="primary" @click="showUploadDialog = true" :disabled="!hasMediaAccess">
             <el-icon><Upload /></el-icon>
             上传文件
@@ -22,7 +17,8 @@
 
       <RepoGuard>
         <!-- 搜索栏 -->
-        <SearchBar
+        <div class="mt-6">
+          <SearchBar
           v-model="searchQuery"
           placeholder="搜索文件名..."
           :show-view-toggle="true"
@@ -30,13 +26,14 @@
           @search="handleSearch"
         >
           <template #filters>
-            <el-select v-model="filterType" placeholder="文件类型" class="w-32" clearable>
+            <el-select v-model="filterType" placeholder="文件类型" class="min-w-[100px] w-36" clearable>
               <el-option label="全部" value="all" />
               <el-option label="图片" value="image" />
               <el-option label="其他" value="other" />
             </el-select>
           </template>
         </SearchBar>
+        </div>
 
         <!-- 加载状态 -->
         <div v-if="loading" class="flex items-center justify-center py-20">
@@ -46,7 +43,7 @@
         <!-- 文件列表 -->
         <template v-else>
           <!-- 网格视图 -->
-          <div v-if="viewMode === 'grid'" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
+          <div v-if="viewMode === 'grid'" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4 mt-6">
             <div
               v-for="file in filteredFiles"
               :key="file.id"
@@ -72,18 +69,15 @@
               <!-- 信息区 -->
               <div class="p-3">
                 <div class="text-sm font-medium text-[rgb(var(--color-text))] truncate">{{ file.name }}</div>
-                <div class="text-xs text-[rgb(var(--color-text-muted))] mt-1 flex items-center justify-between">
+                <div class="text-xs text-[rgb(var(--color-text-muted))] mt-1">
                   <span>{{ formatFileSize(file.size) }}</span>
-                  <span class="px-2 py-0.5 bg-[rgba(var(--color-primary),0.1)] text-[rgb(var(--color-primary))] rounded-full text-xs">
-                    {{ getRepoLabel(file.repo) }}
-                  </span>
                 </div>
               </div>
             </div>
           </div>
 
           <!-- 列表视图 -->
-          <div v-else class="bg-[rgb(var(--color-surface))] rounded-xl border border-[rgb(var(--color-border))] overflow-hidden">
+          <div v-else class="bg-[rgb(var(--color-surface))] rounded-xl border border-[rgb(var(--color-border))] overflow-hidden mt-6">
             <el-table :data="filteredFiles" style="width: 100%">
               <el-table-column label="预览" width="100">
                 <template #default="{ row }">
@@ -99,13 +93,6 @@
                   {{ formatFileSize(row.size) }}
                 </template>
               </el-table-column>
-              <el-table-column label="仓库" width="120">
-                <template #default="{ row }">
-                  <span class="px-2 py-1 bg-[rgba(var(--color-primary),0.1)] text-[rgb(var(--color-primary))] rounded-full text-xs">
-                    {{ getRepoLabel(row.repo) }}
-                  </span>
-                </template>
-              </el-table-column>
               <el-table-column label="上传时间" width="180" prop="uploadTime" />
               <el-table-column label="操作" width="150" fixed="right">
                 <template #default="{ row }">
@@ -117,7 +104,7 @@
           </div>
 
           <!-- 空状态 -->
-          <div v-if="filteredFiles.length === 0 && !loading" class="flex flex-col items-center justify-center py-20 text-center">
+          <div v-if="filteredFiles.length === 0 && !loading" class="flex flex-col items-center justify-center py-20 text-center mt-6">
             <div class="text-6xl mb-4">🖼️</div>
             <h3 class="text-xl font-semibold text-[rgb(var(--color-text))] mb-2">暂无文件</h3>
             <p class="text-[rgb(var(--color-text-muted))] mb-4">上传一些图片或文件开始使用吧</p>
@@ -191,7 +178,6 @@ const localFS = useLocalFS()
 const viewMode = ref<'grid' | 'list'>('grid')
 const filterType = ref('all')
 const searchQuery = ref('')
-const currentRepo = ref('local')
 const showUploadDialog = ref(false)
 const uploading = ref(false)
 const loading = ref(false)
@@ -202,11 +188,6 @@ const hasMediaAccess = computed(() => localFS.hasMediaAccess.value || localFS.ha
 
 const filteredFiles = computed(() => {
   let result = [...files.value]
-
-  // 按仓库筛选
-  if (currentRepo.value !== 'all') {
-    result = result.filter(f => f.repo === currentRepo.value)
-  }
 
   // 按类型筛选
   if (filterType.value !== 'all') {
@@ -232,15 +213,6 @@ const getFileIcon = (type: string) => {
 
 const getFileType = (name: string) => {
   return localFS.getFileType(name)
-}
-
-const getRepoLabel = (repo: string) => {
-  const labels: Record<string, string> = {
-    local: '本地',
-    github: 'GitHub',
-    gitee: 'Gitee'
-  }
-  return labels[repo] || repo
 }
 
 const formatFileSize = (bytes: number) => {

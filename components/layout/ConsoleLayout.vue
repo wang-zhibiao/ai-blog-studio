@@ -16,9 +16,6 @@
       </div>
 
       <div class="flex items-center gap-4">
-        <!-- 仓库切换 -->
-        <RepoSwitcher />
-
         <!-- 用户下拉 -->
         <UserDropdown />
       </div>

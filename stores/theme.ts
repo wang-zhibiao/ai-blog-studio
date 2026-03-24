@@ -154,20 +154,29 @@ export const fullThemeSchemes: Record<ThemeColor, { dark: FullThemeColors; light
 export const useThemeStore = defineStore('theme', () => {
   const currentColor = ref<ThemeColor>('purple')
   const currentMode = ref<ThemeMode>('dark')
+  const isInitialized = ref(false)
 
   const setThemeColor = (color: ThemeColor) => {
     currentColor.value = color
     applyTheme()
-    if (typeof window !== 'undefined' && typeof localStorage !== 'undefined') {
-      localStorage.setItem('theme-color', color)
+    try {
+      if (typeof localStorage !== 'undefined') {
+        localStorage.setItem('theme-color', color)
+      }
+    } catch (e) {
+      console.warn('无法保存主题颜色到 localStorage:', e)
     }
   }
 
   const setThemeMode = (mode: ThemeMode) => {
     currentMode.value = mode
     applyTheme()
-    if (typeof window !== 'undefined' && typeof localStorage !== 'undefined') {
-      localStorage.setItem('theme-mode', mode)
+    try {
+      if (typeof localStorage !== 'undefined') {
+        localStorage.setItem('theme-mode', mode)
+      }
+    } catch (e) {
+      console.warn('无法保存主题模式到 localStorage:', e)
     }
   }
 
@@ -198,17 +207,25 @@ export const useThemeStore = defineStore('theme', () => {
   }
 
   const initTheme = () => {
-    if (typeof window !== 'undefined' && typeof localStorage !== 'undefined') {
-      const savedColor = localStorage.getItem('theme-color') as ThemeColor
-      const savedMode = localStorage.getItem('theme-mode') as ThemeMode
+    try {
+      if (typeof localStorage !== 'undefined') {
+        const savedColor = localStorage.getItem('theme-color') as ThemeColor
+        const savedMode = localStorage.getItem('theme-mode') as ThemeMode
 
-      if (savedColor && fullThemeSchemes[savedColor]) {
-        currentColor.value = savedColor
+        if (savedColor && fullThemeSchemes[savedColor]) {
+          currentColor.value = savedColor
+        }
+        if (savedMode && ['dark', 'light'].includes(savedMode)) {
+          currentMode.value = savedMode
+        }
+        applyTheme()
+        isInitialized.value = true
       }
-      if (savedMode && ['dark', 'light'].includes(savedMode)) {
-        currentMode.value = savedMode
-      }
+    } catch (e) {
+      console.warn('无法从 localStorage 读取主题配置:', e)
+      // 使用默认主题
       applyTheme()
+      isInitialized.value = true
     }
   }
 
@@ -220,6 +237,7 @@ export const useThemeStore = defineStore('theme', () => {
     currentColor,
     currentMode,
     fullThemeSchemes,
+    isInitialized,
     setThemeColor,
     setThemeMode,
     toggleMode,

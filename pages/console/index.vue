@@ -15,7 +15,7 @@
 
         <template v-else>
           <!-- 统计卡片 -->
-          <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mt-6">
             <div class="bg-[rgb(var(--color-surface))] rounded-xl p-5 border border-[rgb(var(--color-border))]">
               <div class="flex items-center gap-3">
                 <div class="w-12 h-12 rounded-xl bg-[rgba(var(--color-primary),0.15)] flex items-center justify-center text-2xl">
@@ -49,21 +49,10 @@
                 </div>
               </div>
             </div>
-            <div class="bg-[rgb(var(--color-surface))] rounded-xl p-5 border border-[rgb(var(--color-border))]">
-              <div class="flex items-center gap-3">
-                <div class="w-12 h-12 rounded-xl bg-[rgba(236,72,153,0.15)] flex items-center justify-center text-2xl">
-                  👁️
-                </div>
-                <div>
-                  <div class="text-2xl font-bold text-[rgb(var(--color-text))]">1,234</div>
-                  <div class="text-sm text-[rgb(var(--color-text-muted))]">总浏览</div>
-                </div>
-              </div>
-            </div>
           </div>
 
           <!-- 分类和标签统计 -->
-          <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6">
             <!-- 分类统计 -->
             <div class="bg-[rgb(var(--color-surface))] rounded-xl border border-[rgb(var(--color-border))] p-6">
               <div class="flex items-center justify-between mb-6">
@@ -135,37 +124,6 @@
               </div>
             </div>
           </div>
-
-          <!-- 快捷操作 -->
-          <div class="bg-[rgb(var(--color-surface))] rounded-xl border border-[rgb(var(--color-border))] p-6">
-            <h2 class="text-xl font-bold text-[rgb(var(--color-text))] mb-4">快捷操作</h2>
-            <div class="grid grid-cols-2 sm:grid-cols-4 gap-4">
-              <NuxtLink to="/console/editor" class="flex flex-col items-center gap-2 p-4 bg-[rgb(var(--color-background))] rounded-lg hover:border-[rgb(var(--color-primary))] border border-[rgb(var(--color-border))] transition-colors">
-                <div class="w-10 h-10 rounded-lg bg-[rgba(var(--color-primary),0.1)] flex items-center justify-center text-xl text-[rgb(var(--color-primary))]">
-                  ✏️
-                </div>
-                <span class="text-sm font-medium text-[rgb(var(--color-text))]">新建文章</span>
-              </NuxtLink>
-              <NuxtLink to="/console/articles" class="flex flex-col items-center gap-2 p-4 bg-[rgb(var(--color-background))] rounded-lg hover:border-[rgb(var(--color-primary))] border border-[rgb(var(--color-border))] transition-colors">
-                <div class="w-10 h-10 rounded-lg bg-[rgba(var(--color-primary),0.1)] flex items-center justify-center text-xl text-[rgb(var(--color-primary))]">
-                  📝
-                </div>
-                <span class="text-sm font-medium text-[rgb(var(--color-text))]">文章列表</span>
-              </NuxtLink>
-              <NuxtLink to="/console/media" class="flex flex-col items-center gap-2 p-4 bg-[rgb(var(--color-background))] rounded-lg hover:border-[rgb(var(--color-primary))] border border-[rgb(var(--color-border))] transition-colors">
-                <div class="w-10 h-10 rounded-lg bg-[rgba(var(--color-primary),0.1)] flex items-center justify-center text-xl text-[rgb(var(--color-primary))]">
-                  🖼️
-                </div>
-                <span class="text-sm font-medium text-[rgb(var(--color-text))]">媒体库</span>
-              </NuxtLink>
-              <NuxtLink to="/console/settings" class="flex flex-col items-center gap-2 p-4 bg-[rgb(var(--color-background))] rounded-lg hover:border-[rgb(var(--color-primary))] border border-[rgb(var(--color-border))] transition-colors">
-                <div class="w-10 h-10 rounded-lg bg-[rgba(var(--color-primary),0.1)] flex items-center justify-center text-xl text-[rgb(var(--color-primary))]">
-                  ⚙️
-                </div>
-                <span class="text-sm font-medium text-[rgb(var(--color-text))]">设置</span>
-              </NuxtLink>
-            </div>
-          </div>
         </template>
       </RepoGuard>
     </div>
@@ -178,7 +136,8 @@ import { Loading } from '@element-plus/icons-vue'
 import { ElMessage } from 'element-plus'
 import ConsoleLayout from '~/components/layout/ConsoleLayout.vue'
 import RepoGuard from '~/components/console/RepoGuard.vue'
-import { useLocalFS, type Article } from '~/composables/useLocalFS'
+import { useLocalFS } from '~/composables/useLocalFS'
+import type { Article } from '~/types/article'
 
 const localFS = useLocalFS()
 

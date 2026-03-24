@@ -1,6 +1,6 @@
 <template>
   <ConsoleLayout>
-    <div class="space-y-6">
+    <div class="space-y-6 px-2">
       <!-- 页面标题和操作 -->
       <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
@@ -11,41 +11,43 @@
 
       <RepoGuard>
         <!-- 搜索栏 -->
-        <SearchBar
-          v-model="searchQuery"
-          placeholder="搜索文章标题或摘要..."
-          :show-view-toggle="true"
-          v-model:view-mode="viewMode"
-          @search="handleSearch"
-        >
-          <template #filters>
-            <el-select v-model="filterCategory" placeholder="分类" class="w-32" clearable>
-              <el-option
-                v-for="cat in allCategories"
-                :key="cat"
-                :label="cat"
-                :value="cat"
-              />
-            </el-select>
-            <el-select v-model="filterStatus" placeholder="状态" class="w-28" clearable>
-              <el-option label="已发布" value="published" />
-              <el-option label="草稿" value="draft" />
-            </el-select>
-            <el-select v-model="filterSort" placeholder="排序" class="w-28">
-              <el-option label="最新修改" value="updated" />
-              <el-option label="创建时间" value="created" />
-              <el-option label="标题" value="title" />
-            </el-select>
-          </template>
-          <template #actions>
-            <NuxtLink to="/console/editor">
-              <el-button type="primary" :loading="loading">
-                <el-icon><Plus /></el-icon>
-                新建文章
-              </el-button>
-            </NuxtLink>
-          </template>
-        </SearchBar>
+        <div class="mt-6 mb-6">
+          <SearchBar
+            v-model="searchQuery"
+            placeholder="搜索文章标题或摘要..."
+            :show-view-toggle="true"
+            v-model:view-mode="viewMode"
+            @search="handleSearch"
+          >
+            <template #filters>
+              <el-select v-model="filterCategory" placeholder="分类" class="min-w-[100px] w-44" clearable>
+                <el-option
+                  v-for="cat in allCategories"
+                  :key="cat"
+                  :label="cat"
+                  :value="cat"
+                />
+              </el-select>
+              <el-select v-model="filterStatus" placeholder="状态" class="min-w-[100px] w-32" clearable>
+                <el-option label="已发布" value="published" />
+                <el-option label="草稿" value="draft" />
+              </el-select>
+              <el-select v-model="filterSort" placeholder="排序" class="min-w-[100px] w-40">
+                <el-option label="最新修改" value="updated" />
+                <el-option label="创建时间" value="created" />
+                <el-option label="标题" value="title" />
+              </el-select>
+            </template>
+            <template #actions>
+              <NuxtLink to="/console/editor">
+                <el-button type="primary" :loading="loading">
+                  <el-icon><Plus /></el-icon>
+                  新建文章
+                </el-button>
+              </NuxtLink>
+            </template>
+          </SearchBar>
+        </div>
 
         <!-- 加载状态 -->
         <div v-if="loading" class="flex items-center justify-center py-20">
@@ -54,7 +56,7 @@
 
         <!-- 卡片视图 -->
         <template v-else>
-          <div v-if="viewMode === 'grid'" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div v-if="viewMode === 'grid'" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mt-6">
             <div
               v-for="article in filteredArticles"
               :key="article.id"
@@ -65,7 +67,7 @@
                 <div class="flex items-start justify-between gap-3">
                   <div class="flex-1 min-w-0">
                     <h3 class="text-lg font-semibold text-[rgb(var(--color-text))] truncate group-hover:text-[rgb(var(--color-primary))] transition-colors">
-                      {{ article.meta.title }}
+                      {{ article.title }}
                     </h3>
                   </div>
                   <el-tag :type="article.meta.status === 'published' ? 'success' : 'info'" size="small">
@@ -74,8 +76,8 @@
                 </div>
               </div>
               <div class="p-5">
-                <p class="text-[rgb(var(--color-text-muted))] text-sm line-clamp-2 mb-4">
-                  {{ article.meta.excerpt || '暂无摘要' }}
+                <p class="text-[rgb(var(--color-text-muted))] text-sm line-clamp-3 mb-4">
+                  {{ getArticlePlainText(article) || '暂无内容' }}
                 </p>
                 <div class="flex items-center gap-2 text-xs text-[rgb(var(--color-text-muted))] mb-4">
                   <el-icon><Calendar /></el-icon>
@@ -93,12 +95,12 @@
           </div>
 
           <!-- 列表视图 -->
-          <div v-else class="bg-[rgb(var(--color-surface))] rounded-xl border border-[rgb(var(--color-border))] overflow-hidden">
+          <div v-else class="bg-[rgb(var(--color-surface))] rounded-xl border border-[rgb(var(--color-border))] overflow-hidden mt-6">
             <el-table :data="filteredArticles" style="width: 100%">
-              <el-table-column label="标题" prop="meta.title" min-width="250">
+              <el-table-column label="标题" prop="title" min-width="250">
                 <template #default="{ row }">
                   <div class="font-medium text-[rgb(var(--color-text))] cursor-pointer hover:text-[rgb(var(--color-primary))]" @click="openArticle(row.id)">
-                    {{ row.meta.title }}
+                    {{ row.title }}
                   </div>
                 </template>
               </el-table-column>
@@ -143,7 +145,7 @@
           </div>
 
           <!-- 空状态 -->
-          <div v-if="!loading && filteredArticles.length === 0" class="flex flex-col items-center justify-center py-20 text-center">
+          <div v-if="!loading && filteredArticles.length === 0" class="flex flex-col items-center justify-center py-20 text-center mt-6">
             <div class="text-6xl mb-4">📝</div>
             <h3 class="text-xl font-semibold text-[rgb(var(--color-text))] mb-2">暂无文章</h3>
             <p class="text-[rgb(var(--color-text-muted))] mb-4">开始创作你的第一篇博客文章吧</p>
@@ -168,10 +170,17 @@ import { ElMessageBox, ElMessage } from 'element-plus'
 import ConsoleLayout from '~/components/layout/ConsoleLayout.vue'
 import SearchBar from '~/components/console/SearchBar.vue'
 import RepoGuard from '~/components/console/RepoGuard.vue'
-import { useLocalFS, type Article } from '~/composables/useLocalFS'
+import { useLocalFS } from '~/composables/useLocalFS'
+import type { Article } from '~/types/article'
+import { generateExcerpt } from '~/types/article'
 
 const router = useRouter()
 const localFS = useLocalFS()
+
+// 从文章内容中提取纯文本
+const getArticlePlainText = (article: Article): string => {
+  return generateExcerpt(article.content, 500)
+}
 
 const searchQuery = ref('')
 const filterCategory = ref('')
@@ -195,7 +204,7 @@ const filteredArticles = computed(() => {
   if (searchQuery.value) {
     const q = searchQuery.value.toLowerCase()
     result = result.filter(a =>
-      a.meta.title.toLowerCase().includes(q) ||
+      a.title.toLowerCase().includes(q) ||
       a.meta.excerpt.toLowerCase().includes(q)
     )
   }
@@ -214,7 +223,7 @@ const filteredArticles = computed(() => {
 
   // 排序
   if (filterSort.value === 'title') {
-    result.sort((a, b) => a.meta.title.localeCompare(b.meta.title))
+    result.sort((a, b) => a.title.localeCompare(b.title))
   } else if (filterSort.value === 'created') {
     result.sort((a, b) =>
       new Date(b.meta.createdAt).getTime() - new Date(a.meta.createdAt).getTime()
@@ -266,7 +275,7 @@ const deleteArticle = async (article: Article) => {
     type: 'warning'
   }).then(async () => {
     try {
-      await localFS.deleteArticle(article.meta.slug || article.id)
+      await localFS.deleteArticle(article.id)
       articles.value = articles.value.filter(a => a.id !== article.id)
       ElMessage.success('删除成功')
     } catch (err) {
