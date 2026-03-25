@@ -38,7 +38,7 @@
                 </div>
 
                 <div v-if="categories.length === 0" class="flex flex-col items-center justify-center py-12 text-center">
-                  <div class="text-4xl mb-3">📂</div>
+                  <div class="text-4xl mb-3"><FaIcon icon="folder-open" class="text-5xl text-[rgb(var(--color-text-muted))]" /></div>
                   <h3 class="text-lg font-semibold text-[rgb(var(--color-text))] mb-1">暂无分类</h3>
                   <p class="text-[rgb(var(--color-text-muted))]">在文章中添加分类后会显示在这里</p>
                 </div>
@@ -54,7 +54,7 @@
                         <div
                           class="w-10 h-10 rounded-lg flex items-center justify-center text-xl bg-[rgba(var(--color-primary),0.1)] text-[rgb(var(--color-primary))]"
                         >
-                          📁
+                          <FaIcon icon="folder" />
                         </div>
                         <div>
                           <div class="font-semibold text-[rgb(var(--color-text))]">{{ category.name }}</div>
@@ -83,7 +83,7 @@
                 </div>
 
                 <div v-if="tags.length === 0" class="flex flex-col items-center justify-center py-12 text-center">
-                  <div class="text-4xl mb-3">🏷️</div>
+                  <div class="text-4xl mb-3"><FaIcon icon="tags" class="text-5xl text-[rgb(var(--color-text-muted))]" /></div>
                   <h3 class="text-lg font-semibold text-[rgb(var(--color-text))] mb-1">暂无标签</h3>
                   <p class="text-[rgb(var(--color-text-muted))]">在文章中添加标签后会显示在这里</p>
                 </div>

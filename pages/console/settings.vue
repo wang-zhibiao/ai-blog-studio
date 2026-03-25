@@ -20,7 +20,7 @@
                 ? 'bg-[rgba(var(--color-primary),0.15)] text-[rgb(var(--color-primary))]'
                 : 'text-[rgb(var(--color-text-muted))] hover:bg-[rgb(var(--color-surface-light))] hover:text-[rgb(var(--color-text))]'"
             >
-              <span class="text-xl">{{ item.icon }}</span>
+              <FaIcon :icon="item.icon" class="text-xl" />
               <span class="font-medium">{{ item.label }}</span>
             </button>
           </div>
@@ -65,7 +65,7 @@
                   <template v-if="localRepo?.connected">
                     <div class="flex items-center justify-between p-4 bg-[rgba(22,163,74,0.1)] rounded-xl border border-green-200">
                       <div class="flex items-center gap-3">
-                        <el-icon class="text-green-500 text-xl"><CircleCheck /></el-icon>
+                        <FaIcon icon="circle-check" class="text-green-600" />
                         <div>
                           <div class="font-semibold text-[rgb(var(--color-text))]">本地存储已连接</div>
                           <div class="text-sm text-[rgb(var(--color-text-muted))]">文章和媒体库已授权</div>
@@ -114,7 +114,7 @@
                   class="flex items-center justify-between p-4 bg-[rgb(var(--color-background))] rounded-xl border border-[rgb(var(--color-border))]"
                 >
                   <div class="flex items-center gap-4">
-                    <div class="text-3xl">{{ repo.icon }}</div>
+                    <div class="text-3xl"><FaIcon :icon="repo.icon" class="w-8 h-8" /></div>
                     <div>
                       <div class="flex items-center gap-2">
                         <span class="font-semibold text-[rgb(var(--color-text))]">{{ repo.name }}</span>
@@ -252,11 +252,12 @@ const localFS = useLocalFS()
 const fsStore = useFsStore()
 const repoStore = useRepoStore()
 
+
 const navItems = [
-  { id: 'theme' as const, label: '主题设置', icon: '🎨' },
-  { id: 'repos' as const, label: '仓库配置', icon: '📦' },
-  { id: 'ai' as const, label: 'AI 配置', icon: '🤖' },
-  { id: 'user' as const, label: '个人信息', icon: '👤' }
+  { id: 'theme' as const, label: '主题设置', icon: 'palette' },
+  { id: 'repos' as const, label: '仓库配置', icon: 'box' },
+  { id: 'ai' as const, label: 'AI 配置', icon: 'robot' },
+  { id: 'user' as const, label: '个人信息', icon: 'user' }
 ]
 
 // 获取本地仓库状态

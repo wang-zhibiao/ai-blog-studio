@@ -146,7 +146,7 @@
 
           <!-- 空状态 -->
           <div v-if="!loading && filteredArticles.length === 0" class="flex flex-col items-center justify-center py-20 text-center mt-6">
-            <div class="text-6xl mb-4">📝</div>
+            <div class="text-6xl mb-4"><FaIcon icon="file-lines" class="text-6xl text-[rgb(var(--color-text-muted))]" /></div>
             <h3 class="text-xl font-semibold text-[rgb(var(--color-text))] mb-2">暂无文章</h3>
             <p class="text-[rgb(var(--color-text-muted))] mb-4">开始创作你的第一篇博客文章吧</p>
             <NuxtLink to="/console/editor">

@@ -105,7 +105,7 @@
 
           <!-- 空状态 -->
           <div v-if="filteredFiles.length === 0 && !loading" class="flex flex-col items-center justify-center py-20 text-center mt-6">
-            <div class="text-6xl mb-4">🖼️</div>
+            <div class="text-6xl mb-4"><FaIcon icon="image" class="text-6xl text-[rgb(var(--color-text-muted))]" /></div>
             <h3 class="text-xl font-semibold text-[rgb(var(--color-text))] mb-2">暂无文件</h3>
             <p class="text-[rgb(var(--color-text-muted))] mb-4">上传一些图片或文件开始使用吧</p>
             <el-button type="primary" @click="showUploadDialog = true" :disabled="!hasMediaAccess">
@@ -204,11 +204,11 @@ const filteredFiles = computed(() => {
 
 const getFileIcon = (type: string) => {
   const icons: Record<string, string> = {
-    image: '🖼️',
+    image: 'image',
     video: '🎬',
-    other: '📄'
+    other: 'file'
   }
-  return icons[type] || '📄'
+  return icons[type] || 'file'
 }
 
 const getFileType = (name: string) => {

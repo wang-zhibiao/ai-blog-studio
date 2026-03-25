@@ -2,7 +2,9 @@
   <article class="blog-card">
     <div class="card-image">
       <div class="image-placeholder" :style="{ background: gradient }">
-        <span class="image-emoji">{{ emoji }}</span>
+        <span class="image-icon">
+          <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.8)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><polyline points="14 2 14 8 20 8"/></svg>
+        </span>
       </div>
       <div class="card-badge" v-if="isFeatured">精选</div>
     </div>
@@ -22,11 +24,11 @@
         </div>
         <div class="card-stats">
           <span class="stat">
-            <span class="stat-icon">👁</span>
+            <svg class="stat-icon" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>
             {{ views }}
           </span>
           <span class="stat">
-            <span class="stat-icon">💬</span>
+            <svg class="stat-icon" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
             {{ comments }}
           </span>
         </div>
@@ -51,7 +53,7 @@ interface Props {
 
 const props = withDefaults(defineProps<Props>(), {
   isFeatured: false,
-  emoji: '📝',
+  emoji: '',
   gradient: 'linear-gradient(135deg, #6366f1, #8b5cf6)'
 })
 
@@ -103,8 +105,10 @@ const authorInitial = computed(() => props.author[0].toUpperCase())
   transform: scale(1.05);
 }
 
-.image-emoji {
-  font-size: 64px;
+.image-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .card-badge {

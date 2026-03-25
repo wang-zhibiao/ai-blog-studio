@@ -7,7 +7,7 @@
       class="nav-item"
       :class="{ active: isActive(item.id) }"
     >
-      <span class="nav-icon">{{ item.icon }}</span>
+      <FaIcon :icon="item.icon" class="nav-icon" />
       <span class="nav-label">{{ item.label }}</span>
     </NuxtLink>
   </nav>
@@ -19,11 +19,11 @@ import { useRoute } from 'vue-router'
 const route = useRoute()
 
 const navItems = [
-  { id: 'overview', label: '概览', icon: '📊', path: '/console' },
-  { id: 'articles', label: '文章', icon: '📝', path: '/console/articles' },
-  { id: 'categories', label: '分类标签', icon: '🏷️', path: '/console/categories' },
-  { id: 'media', label: '媒体库', icon: '🖼️', path: '/console/media' },
-  { id: 'settings', label: '设置', icon: '⚙️', path: '/console/settings' }
+  { id: 'overview', label: '概览', icon: 'house', path: '/console' },
+  { id: 'articles', label: '文章', icon: 'file-lines', path: '/console/articles' },
+  { id: 'categories', label: '分类标签', icon: 'tags', path: '/console/categories' },
+  { id: 'media', label: '媒体库', icon: 'image', path: '/console/media' },
+  { id: 'settings', label: '设置', icon: 'gear', path: '/console/settings' }
 ]
 
 const activeMenu = computed(() => {
@@ -58,6 +58,7 @@ const isActive = (id: string) => activeMenu.value === id
   color: rgb(var(--color-text-muted));
   transition: all 0.2s ease;
   height: 40px;
+  cursor: pointer;
 }
 
 .nav-item:hover {
@@ -72,8 +73,9 @@ const isActive = (id: string) => activeMenu.value === id
 }
 
 .nav-icon {
-  font-size: 18px;
-  line-height: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .nav-label {

@@ -3,20 +3,25 @@
     <div class="container">
       <div class="header-content">
         <NuxtLink to="/" class="logo">
-          <span class="logo-icon">✨</span>
+          <span class="logo-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-[rgb(var(--color-primary))]"><path d="M12 3c-1.5 0-2.7.4-3.6 1.1-.9.7-1.4 1.7-1.4 2.9 0 1.2.4 2.1 1.1 2.8.3.3.7.6 1.2.8l-1.1 4.3c-.1.5.3.9.8.9h5.4c.5 0 .9-.4.8-.9l-1.1-4.3c.5-.2.9-.5 1.2-.8.7-.7 1.1-1.6 1.1-2.8 0-1.2-.5-2.2-1.4-2.9-.9-.7-2.1-1.1-3.6-1.1z"/><path d="M6 17v2"/><path d="M18 17v2"/></svg>
+          </span>
           <span class="logo-text">AI Blog Studio</span>
         </NuxtLink>
         <nav class="nav">
-          <NuxtLink to="/" class="nav-link active">首页</NuxtLink>
-          <NuxtLink to="/blog" class="nav-link">博客</NuxtLink>
-          <NuxtLink to="/console" class="nav-link">控制台</NuxtLink>
+          <NuxtLink to="/" class="nav-link" active-class="active">首页</NuxtLink>
+          <NuxtLink to="/blog" class="nav-link" active-class="active">博客</NuxtLink>
+          <NuxtLink to="/console" class="nav-link" active-class="active">控制台</NuxtLink>
           <a href="#" class="nav-link">关于</a>
         </nav>
         <div class="header-actions">
           <ThemeSwitcher />
           <NuxtLink to="/console" class="btn btn-primary">
             <span>开始写作</span>
-            <span class="btn-icon">→</span>
+            <svg class="btn-icon" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M5 12h14"/>
+              <path d="m12 5 7 7-7 7"/>
+            </svg>
           </NuxtLink>
         </div>
       </div>

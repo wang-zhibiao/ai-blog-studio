@@ -7,7 +7,9 @@
       <span class="text-[rgb(var(--color-text))] font-medium hidden sm:block">
         {{ userName }}
       </span>
-      <span class="text-[rgb(var(--color-text-muted))]">▼</span>
+      <span class="text-[rgb(var(--color-text-muted))]">
+        <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>
+      </span>
     </div>
     <template #dropdown>
       <el-dropdown-menu class="min-w-[220px]">
@@ -25,13 +27,15 @@
           class="flex items-center gap-2"
           :class="{ 'bg-[rgba(var(--color-primary),0.1)]': repo.active }"
         >
-          <span>{{ repo.icon }}</span>
+          <FaIcon :icon="repo.icon" class="text-xl" />
           <span class="flex-1">{{ repo.name }}</span>
-          <span v-if="repo.active" class="text-xs text-[rgb(var(--color-primary))]">✓</span>
+          <span v-if="repo.active" class="text-xs text-[rgb(var(--color-primary))]">
+            <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+          </span>
           <span v-if="repo.connected" class="text-xs text-green-500">已连接</span>
         </el-dropdown-item>
         <el-dropdown-item divided command="settings" class="flex items-center gap-2">
-          <span>⚙️</span>
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .22 2.43l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.22 2.43l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.38a2 2 0 0 0-.22-2.43l-.15-.1a2 2 0 0 1-1-1.72v-.51a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .22-2.43l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg>
           <span>仓库设置</span>
         </el-dropdown-item>
         <el-dropdown-item divided command="logout" class="text-red-500">

@@ -6,7 +6,7 @@ export type RepoType = 'local' | 'github' | 'gitee'
 export interface RepoConfig {
   id: RepoType
   name: string
-  icon: string
+  icon: string | string[]
   connected: boolean
   active: boolean
   username?: string
@@ -17,9 +17,9 @@ export interface RepoConfig {
 export const useRepoStore = defineStore('repo', () => {
   // 仓库列表
   const repos = ref<RepoConfig[]>([
-    { id: 'local', name: '本地存储', icon: '💻', connected: false, active: true },
-    { id: 'github', name: 'GitHub', icon: '🐙', connected: false, active: false },
-    { id: 'gitee', name: 'Gitee', icon: '🐱', connected: false, active: false }
+    { id: 'local', name: '本地存储', icon:  'floppy-disk', connected: false, active: true },
+    { id: 'github', name: 'GitHub', icon: ['fab', 'github'], connected: false, active: false },
+    { id: 'gitee', name: 'Gitee', icon: ['fab', 'gitee'], connected: false, active: false }
   ])
 
   // 当前活动仓库

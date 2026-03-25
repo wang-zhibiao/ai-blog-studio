@@ -2,6 +2,9 @@ export default defineNuxtConfig({
   compatibilityDate: '2025-03-19',
   devtools: { enabled: true },
   css: ['~/assets/css/main.css'],
+  plugins: [
+    { src: '~/plugins/fontawesome.ts', mode: 'all' }
+  ],
   app: {
     head: {
       title: 'AI Blog Studio',

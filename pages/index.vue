@@ -6,7 +6,7 @@
       <div class="container">
         <div class="hero-content">
           <div class="hero-badge">
-            <span class="badge-icon">🚀</span>
+            <FaIcon icon="rocket" class="badge-icon" />
             <span>100% 本地优先</span>
           </div>
           <h1 class="hero-title">
@@ -28,19 +28,19 @@
           </div>
           <div class="hero-features">
             <div class="mini-feature">
-              <span class="mini-icon">💾</span>
+              <FaIcon icon="floppy-disk" class="mini-icon" />
               <span>本地存储</span>
             </div>
             <div class="mini-feature">
-              <span class="mini-icon">🤖</span>
+              <FaIcon icon="robot" class="mini-icon" />
               <span>本地 AI</span>
             </div>
             <div class="mini-feature">
-              <span class="mini-icon">🐙</span>
+              <FaIcon :icon="['fab', 'github']" class="mini-icon" />
               <span>GitHub/Gitee</span>
             </div>
             <div class="mini-feature">
-              <span class="mini-icon">🔓</span>
+              <FaIcon icon="lock-open" class="mini-icon" />
               <span>完全开源</span>
             </div>
           </div>
@@ -60,7 +60,7 @@
               <div class="editor-line medium"></div>
             </div>
             <div class="ai-badge">
-              <span>✨</span>
+              <FaIcon icon="wand-magic-sparkles" class="text-xl" />
               <span>本地 AI 写作中</span>
             </div>
           </div>
@@ -77,7 +77,7 @@
         <div class="core-features-grid">
           <div class="core-feature-card">
             <div class="feature-icon-wrapper local">
-              <span class="feature-icon">💾</span>
+              <FaIcon icon="floppy-disk" class="feature-icon" />
             </div>
             <h3 class="feature-title">本地文件存储</h3>
             <p class="feature-description">
@@ -86,7 +86,7 @@
           </div>
           <div class="core-feature-card">
             <div class="feature-icon-wrapper ai">
-              <span class="feature-icon">🤖</span>
+              <FaIcon icon="robot" class="feature-icon" />
             </div>
             <h3 class="feature-title">本地大模型</h3>
             <p class="feature-description">
@@ -95,7 +95,7 @@
           </div>
           <div class="core-feature-card">
             <div class="feature-icon-wrapper git">
-              <span class="feature-icon">🐙</span>
+              <FaIcon :icon="['fab', 'github']" class="feature-icon" />
             </div>
             <h3 class="feature-title">免费托管</h3>
             <p class="feature-description">
@@ -114,12 +114,12 @@
         </div>
         <div class="features-grid">
           <div class="feature-card">
-            <div class="feature-icon-small">✍️</div>
+            <div class="feature-icon-small"><FaIcon icon="pen-to-square" /></div>
             <h3 class="feature-title-small">富文本编辑器</h3>
             <p class="feature-description-small">所见即所得的 SunEditor，Markdown 与 HTML 完美兼容</p>
           </div>
           <div class="feature-card">
-            <div class="feature-icon-small">🎨</div>
+            <div class="feature-icon-small"><FaIcon icon="palette" /></div>
             <h3 class="feature-title-small">多主题切换</h3>
             <p class="feature-description-small">五种精心设计的主题配色，打造舒适写作环境</p>
           </div>
@@ -129,17 +129,17 @@
             <p class="feature-description-small">本地、GitHub、Gitee 自由切换，灵活管理</p>
           </div>
           <div class="feature-card">
-            <div class="feature-icon-small">✨</div>
+            <div class="feature-icon-small"><FaIcon icon="wand-magic-sparkles" /></div>
             <h3 class="feature-title-small">AI 智能续写</h3>
             <p class="feature-description-small">灵感枯竭时，AI 帮你继续创作</p>
           </div>
           <div class="feature-card">
-            <div class="feature-icon-small">🎯</div>
+            <div class="feature-icon-small"><FaIcon icon="bullseye" /></div>
             <h3 class="feature-title-small">智能润色</h3>
             <p class="feature-description-small">AI 帮你优化表达，提升文章质量</p>
           </div>
           <div class="feature-card">
-            <div class="feature-icon-small">📝</div>
+            <div class="feature-icon-small"><FaIcon icon="pen-to-square" /></div>
             <h3 class="feature-title-small">摘要生成</h3>
             <p class="feature-description-small">一键生成文章摘要，SEO 更轻松</p>
           </div>
@@ -193,7 +193,7 @@
         <div class="footer-content">
           <div class="footer-brand">
             <div class="logo">
-              <span class="logo-icon">✨</span>
+              <FaIcon icon="bolt" class="logo-icon" />
               <span class="logo-text">AI Blog Studio</span>
             </div>
             <p class="footer-description">本地优先的博客写作工具</p>
@@ -564,6 +564,7 @@
 }
 
 .feature-card {
+  text-align: center;
   background: rgb(var(--color-surface));
   border: 1px solid rgb(var(--color-border));
   border-radius: 20px;
