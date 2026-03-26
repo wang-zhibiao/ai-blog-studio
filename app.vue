@@ -6,18 +6,13 @@
 
 <script setup lang="ts">
 import ErrorBoundary from '~/components/common/ErrorBoundary.vue'
-import { useThemeStore } from '~/stores/theme'
-import { useFsStore } from '~/stores/fs'
-import { useRepoStore } from '~/stores/repo'
+import { useStorageStore } from '~/stores/storage'
 
 onMounted(() => {
-  const themeStore = useThemeStore()
-  themeStore.initTheme()
+  // 主题初始化现在由 plugins/theme.client.ts 插件处理
+  // Pinia persist 会自动恢复持久化状态
 
-  const repoStore = useRepoStore()
-  repoStore.init()
-
-  const fsStore = useFsStore()
-  fsStore.init() // fsStore.init() 会调用 updateLocalRepoStatus() 同步状态到 repoStore
+  const storageStore = useStorageStore()
+  storageStore.init()
 })
 </script>

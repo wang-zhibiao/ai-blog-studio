@@ -17,22 +17,21 @@ import { Loading } from '@element-plus/icons-vue'
 import { ElMessage } from 'element-plus'
 import EditorPage from './index.vue'
 import { useStorage } from '~/composables/useStorage'
-import { useRepoStore } from '~/stores/repo'
+import { useStorageStore } from '~/stores/storage'
 import type { Article } from '~/types/article'
 
 const route = useRoute()
 const router = useRouter()
 const storage = useStorage()
-const repoStore = useRepoStore()
+const storageStore = useStorageStore()
 
 // 计算属性：检查存储是否就绪
 const isStorageReady = computed(() => {
-  const repo = repoStore.currentRepo
-  if (!repo) return false
-  if (repo.id === 'local') {
-    return storage.hasArticlesAccess?.value || false
+  const activeRepo = storageStore.currentRepo
+  if (activeRepo === 'local') {
+    return storageStore.local.connected
   }
-  return repo.connected
+  return storageStore.remoteRepos[activeRepo]?.connected ?? false
 })
 
 const loading = ref(true)

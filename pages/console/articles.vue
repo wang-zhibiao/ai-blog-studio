@@ -146,7 +146,7 @@
 
           <!-- 空状态 -->
           <div v-if="!loading && filteredArticles.length === 0" class="flex flex-col items-center justify-center py-20 text-center mt-6">
-            <div class="text-6xl mb-4"><FaIcon icon="file-lines" class="text-6xl text-[rgb(var(--color-text-muted))]" /></div>
+            <div class="text-6xl mb-4"><FaIcon :icon="'file-lines'" class="text-6xl text-[rgb(var(--color-text-muted))]" /></div>
             <h3 class="text-xl font-semibold text-[rgb(var(--color-text))] mb-2">暂无文章</h3>
             <p class="text-[rgb(var(--color-text-muted))] mb-4">开始创作你的第一篇博客文章吧</p>
             <NuxtLink to="/console/editor">
@@ -171,22 +171,21 @@ import ConsoleLayout from '~/components/layout/ConsoleLayout.vue'
 import SearchBar from '~/components/console/SearchBar.vue'
 import RepoGuard from '~/components/console/RepoGuard.vue'
 import { useStorage } from '~/composables/useStorage'
-import { useRepoStore } from '~/stores/repo'
+import { useStorageStore } from '~/stores/storage'
 import type { Article } from '~/types/article'
 import { generateExcerpt } from '~/types/article'
 
 const router = useRouter()
 const storage = useStorage()
-const repoStore = useRepoStore()
+const storageStore = useStorageStore()
 
 // 计算属性：检查当前存储是否就绪
 const isStorageReady = computed(() => {
-  const repo = repoStore.currentRepo
-  if (!repo) return false
-  if (repo.id === 'local') {
-    return storage.hasArticlesAccess?.value || false
+  const activeRepo = storageStore.currentRepo
+  if (activeRepo === 'local') {
+    return storageStore.local.connected
   }
-  return repo.connected
+  return storageStore.remoteRepos[activeRepo]?.connected ?? false
 })
 
 // 从文章内容中提取纯文本

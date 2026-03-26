@@ -2,7 +2,7 @@
   <div class="repo-guard">
     <slot v-if="hasAccess" />
     <div v-else class="flex flex-col items-center justify-center py-20 text-center">
-      <div class="text-6xl mb-4"><FaIcon icon="folder-open" class="text-6xl text-[rgb(var(--color-text-muted))]" /></div>
+      <div class="text-6xl mb-4"><FaIcon :icon="'folder-open'" class="text-6xl text-[rgb(var(--color-text-muted))]" /></div>
       <h3 class="text-xl font-semibold text-[rgb(var(--color-text))] mb-2">需要配置仓库</h3>
       <p class="text-[rgb(var(--color-text-muted))] mb-6">请先在设置中配置本地文件夹</p>
       <NuxtLink to="/console/settings?tab=repos">
@@ -18,12 +18,15 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { Setting } from '@element-plus/icons-vue'
-import { useRepoStore } from '~/stores/repo'
+import { useStorageStore } from '~/stores/storage'
 
-const repoStore = useRepoStore()
+const storageStore = useStorageStore()
 const hasAccess = computed(() => {
   // 检查当前活动仓库是否已连接
-  const currentRepo = repoStore.currentRepo
-  return currentRepo?.connected || false
+  const activeRepo = storageStore.currentRepo
+  if (activeRepo === 'local') {
+    return storageStore.local.connected
+  }
+  return storageStore.remoteRepos[activeRepo]?.connected || false
 })
 </script>

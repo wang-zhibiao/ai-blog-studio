@@ -150,7 +150,7 @@ import { ArrowLeft, DocumentCopy, Promotion, Setting, MagicStick, Star, Brush, D
 import { ElMessage, ElMessageBox } from 'element-plus'
 import ArticleEditor from '~/components/editor/ArticleEditor.vue'
 import { useStorage } from '~/composables/useStorage'
-import { useRepoStore } from '~/stores/repo'
+import { useStorageStore } from '~/stores/storage'
 import { useArticleStore } from '~/stores/article'
 import type { EditorArticle, Article } from '~/types/article'
 
@@ -164,17 +164,16 @@ const props = defineProps<{
 const route = useRoute()
 const router = useRouter()
 const storage = useStorage()
-const repoStore = useRepoStore()
+const storageStore = useStorageStore()
 const articleStore = useArticleStore()
 
 // 计算属性：检查存储是否就绪
 const isStorageReady = computed(() => {
-  const repo = repoStore.currentRepo
-  if (!repo) return false
-  if (repo.id === 'local') {
-    return storage.hasArticlesAccess?.value || false
+  const activeRepo = storageStore.currentRepo
+  if (activeRepo === 'local') {
+    return storageStore.local.connected
   }
-  return repo.connected
+  return storageStore.remoteRepos[activeRepo]?.connected ?? false
 })
 
 // 状态

@@ -38,7 +38,7 @@
                 </div>
 
                 <div v-if="categories.length === 0" class="flex flex-col items-center justify-center py-12 text-center">
-                  <div class="text-4xl mb-3"><FaIcon icon="folder-open" class="text-5xl text-[rgb(var(--color-text-muted))]" /></div>
+                  <div class="text-4xl mb-3"><FaIcon :icon="'folder-open'" class="text-5xl text-[rgb(var(--color-text-muted))]" /></div>
                   <h3 class="text-lg font-semibold text-[rgb(var(--color-text))] mb-1">暂无分类</h3>
                   <p class="text-[rgb(var(--color-text-muted))]">在文章中添加分类后会显示在这里</p>
                 </div>
@@ -54,7 +54,7 @@
                         <div
                           class="w-10 h-10 rounded-lg flex items-center justify-center text-xl bg-[rgba(var(--color-primary),0.1)] text-[rgb(var(--color-primary))]"
                         >
-                          <FaIcon icon="folder" />
+                          <FaIcon :icon="'folder'" />
                         </div>
                         <div>
                           <div class="font-semibold text-[rgb(var(--color-text))]">{{ category.name }}</div>
@@ -83,7 +83,7 @@
                 </div>
 
                 <div v-if="tags.length === 0" class="flex flex-col items-center justify-center py-12 text-center">
-                  <div class="text-4xl mb-3"><FaIcon icon="tags" class="text-5xl text-[rgb(var(--color-text-muted))]" /></div>
+                  <div class="text-4xl mb-3"><FaIcon :icon="'tags'" class="text-5xl text-[rgb(var(--color-text-muted))]" /></div>
                   <h3 class="text-lg font-semibold text-[rgb(var(--color-text))] mb-1">暂无标签</h3>
                   <p class="text-[rgb(var(--color-text-muted))]">在文章中添加标签后会显示在这里</p>
                 </div>
@@ -115,20 +115,19 @@ import { ElMessage } from 'element-plus'
 import ConsoleLayout from '~/components/layout/ConsoleLayout.vue'
 import RepoGuard from '~/components/console/RepoGuard.vue'
 import { useStorage } from '~/composables/useStorage'
-import { useRepoStore } from '~/stores/repo'
+import { useStorageStore } from '~/stores/storage'
 import type { Article } from '~/types/article'
 
 const storage = useStorage()
-const repoStore = useRepoStore()
+const storageStore = useStorageStore()
 
 // 计算属性：检查存储是否就绪
 const isStorageReady = computed(() => {
-  const repo = repoStore.currentRepo
-  if (!repo) return false
-  if (repo.id === 'local') {
-    return storage.hasArticlesAccess?.value || false
+  const activeRepo = storageStore.currentRepo
+  if (activeRepo === 'local') {
+    return storageStore.local.connected
   }
-  return repo.connected
+  return storageStore.remoteRepos[activeRepo]?.connected ?? false
 })
 
 const activeTab = ref<'categories' | 'tags'>('categories')

@@ -1,26 +1,7 @@
 import { defineStore } from 'pinia'
+import type { ThemeColor, ThemeMode, FullThemeColors } from '~/types'
 
-export type ThemeColor = 'purple' | 'blue' | 'green' | 'orange' | 'pink' | 'cyan' | 'red' | 'indigo'
-export type ThemeMode = 'dark' | 'light'
-
-export interface FullThemeColors {
-  primary: string
-  primaryDark: string
-  secondary: string
-  accent: string
-  success: string
-  warning: string
-  error: string
-  info: string
-  background: string
-  surface: string
-  surfaceLight: string
-  text: string
-  textMuted: string
-  textInverse: string
-  border: string
-  borderLight: string
-}
+export type { ThemeColor, ThemeMode, FullThemeColors } from '~/types'
 
 // 深色模式配色基础
 const darkBase = {
@@ -154,7 +135,7 @@ export const useThemeStore = defineStore('theme', {
   state: () => ({
     currentColor: 'purple' as ThemeColor,
     currentMode: 'dark' as ThemeMode,
-    isInitialized: false
+    isHydrated: false  // 标记是否已完成客户端 hydrate，用于避免闪烁
   }),
 
   getters: {
@@ -165,25 +146,13 @@ export const useThemeStore = defineStore('theme', {
     setThemeColor(color: ThemeColor) {
       this.currentColor = color
       this.applyTheme()
-      try {
-        if (typeof localStorage !== 'undefined') {
-          localStorage.setItem('theme-color', color)
-        }
-      } catch (e) {
-        console.warn('无法保存主题颜色到 localStorage:', e)
-      }
+      // persist: true 自动处理持久化，无需手动操作 localStorage
     },
 
     setThemeMode(mode: ThemeMode) {
       this.currentMode = mode
       this.applyTheme()
-      try {
-        if (typeof localStorage !== 'undefined') {
-          localStorage.setItem('theme-mode', mode)
-        }
-      } catch (e) {
-        console.warn('无法保存主题模式到 localStorage:', e)
-      }
+      // persist: true 自动处理持久化，无需手动操作 localStorage
     },
 
     applyTheme() {
@@ -212,29 +181,6 @@ export const useThemeStore = defineStore('theme', {
       }
     },
 
-    initTheme() {
-      try {
-        if (typeof localStorage !== 'undefined') {
-          const savedColor = localStorage.getItem('theme-color') as ThemeColor
-          const savedMode = localStorage.getItem('theme-mode') as ThemeMode
-
-          if (savedColor && fullThemeSchemes[savedColor]) {
-            this.currentColor = savedColor
-          }
-          if (savedMode && ['dark', 'light'].includes(savedMode)) {
-            this.currentMode = savedMode
-          }
-          this.applyTheme()
-          this.isInitialized = true
-        }
-      } catch (e) {
-        console.warn('无法从 localStorage 读取主题配置:', e)
-        // 使用默认主题
-        this.applyTheme()
-        this.isInitialized = true
-      }
-    },
-
     toggleMode() {
       this.setThemeMode(this.currentMode === 'dark' ? 'light' : 'dark')
     }
@@ -242,3 +188,37 @@ export const useThemeStore = defineStore('theme', {
 
   persist: true
 })
+
+// 跨标签页同步初始化标记
+let syncInitialized = false
+
+// 初始化跨标签页同步
+// 使用函数形式避免在 SSR 环境下执行
+export function initThemeCrossTabSync(): void {
+  if (typeof window === 'undefined' || syncInitialized) return
+
+  syncInitialized = true
+
+  // 延迟加载避免阻塞初始渲染
+  const scheduleSync = typeof requestIdleCallback !== 'undefined'
+    ? (cb: () => void) => requestIdleCallback(cb)
+    : (cb: () => void) => setTimeout(cb, 1)
+
+  scheduleSync(() => {
+    try {
+      const { useCrossTabSync } = require('~/composables/useCrossTabSync')
+      useCrossTabSync(useThemeStore, {
+        channel: 'theme_sync',
+        pick: ['currentColor', 'currentMode'],
+        strategy: 'replace',
+        debug: import.meta.dev
+      })
+
+      if (import.meta.dev) {
+        console.log('[ThemeStore] Cross-tab sync initialized')
+      }
+    } catch (error) {
+      console.error('[ThemeStore] Failed to initialize cross-tab sync:', error)
+    }
+  })
+}

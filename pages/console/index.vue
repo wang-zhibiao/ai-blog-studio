@@ -62,7 +62,7 @@
                 </NuxtLink>
               </div>
               <div v-if="categories.length === 0" class="flex flex-col items-center justify-center py-8 text-center">
-                <div class="text-3xl mb-2"><FaIcon icon="folder-open" class="text-4xl text-[rgb(var(--color-text-muted))]" /></div>
+                <div class="text-3xl mb-2"><FaIcon :icon="'folder-open'" class="text-4xl text-[rgb(var(--color-text-muted))]" /></div>
                 <p class="text-[rgb(var(--color-text-muted))]">暂无分类</p>
               </div>
               <div v-else class="space-y-3">
@@ -73,7 +73,7 @@
                 >
                   <div class="flex items-center gap-3">
                     <div class="w-8 h-8 rounded-lg flex items-center justify-center text-lg bg-[rgba(var(--color-primary),0.1)] text-[rgb(var(--color-primary))]">
-                      <FaIcon icon="folder" />
+                      <FaIcon :icon="'folder'" />
                     </div>
                     <span class="font-medium text-[rgb(var(--color-text))]">{{ category.name }}</span>
                   </div>
@@ -91,7 +91,7 @@
                 </NuxtLink>
               </div>
               <div v-if="tags.length === 0" class="flex flex-col items-center justify-center py-8 text-center">
-                <div class="text-3xl mb-2"><FaIcon icon="tags" class="text-4xl text-[rgb(var(--color-text-muted))]" /></div>
+                <div class="text-3xl mb-2"><FaIcon :icon="'tags'" class="text-4xl text-[rgb(var(--color-text-muted))]" /></div>
                 <p class="text-[rgb(var(--color-text-muted))]">暂无标签</p>
               </div>
               <div v-else class="flex flex-wrap gap-2 mb-6">
@@ -137,11 +137,11 @@ import { ElMessage } from 'element-plus'
 import ConsoleLayout from '~/components/layout/ConsoleLayout.vue'
 import RepoGuard from '~/components/console/RepoGuard.vue'
 import { useStorage } from '~/composables/useStorage'
-import { useRepoStore } from '~/stores/repo'
+import { useStorageStore } from '~/stores/storage'
 import type { Article } from '~/types/article'
 
 const storage = useStorage()
-const repoStore = useRepoStore()
+const storageStore = useStorageStore()
 
 const loading = ref(false)
 const articles = ref<Article[]>([])
@@ -190,11 +190,11 @@ const tags = computed<Tag[]>(() => {
 
 // 计算属性：检查当前存储是否就绪
 const isStorageReady = computed(() => {
-  const repo = repoStore.currentRepo
-  if (repo.id === 'local') {
-    return storage.hasArticlesAccess.value
+  const activeRepo = storageStore.currentRepo
+  if (activeRepo === 'local') {
+    return storageStore.local.connected
   }
-  return repo.connected
+  return storageStore.remoteRepos[activeRepo]?.connected ?? false
 })
 
 const loadArticles = async () => {

@@ -65,7 +65,7 @@
                   <template v-if="localRepo?.connected">
                     <div class="flex items-center justify-between p-4 bg-[rgba(22,163,74,0.1)] rounded-xl border border-green-200">
                       <div class="flex items-center gap-3">
-                        <FaIcon icon="circle-check" class="text-green-600" />
+                        <FaIcon :icon="'circle-check'" class="text-green-600" />
                         <div>
                           <div class="font-semibold text-[rgb(var(--color-text))]">本地存储已连接</div>
                           <div class="text-sm text-[rgb(var(--color-text-muted))]">文章和媒体库已授权</div>
@@ -538,16 +538,16 @@ import { FolderOpened, CircleCheck, Delete, Warning, InfoFilled } from '@element
 import ThemeSwitcher from '~/components/ThemeSwitcher.vue'
 import ConsoleLayout from '~/components/layout/ConsoleLayout.vue'
 import { useLocalFS } from '~/composables/useLocalFS'
-import { useFsStore } from '~/stores/fs'
-import { useRepoStore, type RepoType } from '~/stores/repo'
+import { useStorageStore, type RepoType } from '~/stores/storage'
+import { useAIStore } from '~/stores/ai'
 import { useGitHubFS, type GitHubConfig } from '~/composables/useGitHubFS'
 
 const route = useRoute()
 const router = useRouter()
 const activeTab = ref<'theme' | 'repos' | 'ai' | 'user'>('theme')
 const localFS = useLocalFS()
-const fsStore = useFsStore()
-const repoStore = useRepoStore()
+const storageStore = useStorageStore()
+const aiStore = useAIStore()
 
 
 const navItems = [
@@ -558,10 +558,13 @@ const navItems = [
 ]
 
 // 获取本地仓库状态
-const localRepo = computed(() => repoStore.getRepo('local'))
+const localRepo = computed(() => storageStore.local)
 
 // 远程仓库列表（排除本地存储）
-const remoteRepos = computed(() => repoStore.repos.filter(r => r.id !== 'local'))
+const remoteRepos = computed(() => [
+  { id: 'github', name: 'GitHub', icon: ['fab', 'github'], ...storageStore.remoteRepos.github },
+  { id: 'gitee', name: 'Gitee', icon: ['fab', 'gitee'], ...storageStore.remoteRepos.gitee }
+])
 
 const aiConfig = ref({
   provider: 'openai',
@@ -589,17 +592,18 @@ const selectArticlesFolder = async () => {
 }
 
 const clearArticles = () => {
-  fsStore.clearArticlesDir()
-  fsStore.clearMediaDir()
+  storageStore.clearLocalStorage()
   ElMessage.info('已断开本地存储')
 }
 
 const setActiveRepo = (repoId: RepoType) => {
-  repoStore.setActiveRepo(repoId)
-  const repo = repoStore.getRepo(repoId)
-  if (repo) {
-    ElMessage.success(`已切换到 ${repo.name}`)
+  storageStore.setActiveRepo(repoId)
+  const repoNames: Record<RepoType, string> = {
+    local: '本地存储',
+    github: 'GitHub',
+    gitee: 'Gitee'
   }
+  ElMessage.success(`已切换到 ${repoNames[repoId]}`)
 }
 
 // GitHub 连接对话框
@@ -720,28 +724,19 @@ const completeGitHubConnect = async () => {
       throw new Error(`访问仓库失败: ${testResponse.status}`)
     }
 
-    // 保存配置到 localStorage
-    const githubConfig = {
+    // 更新 storageStore
+    storageStore.setGitHubConfig({
       token: token.trim(),
       username,
       repo,
       branch: branch || 'main',
-      basePath: basePath.trim()
-    }
-
-    localStorage.setItem('githubConfig', JSON.stringify(githubConfig))
-
-    // 更新 repoStore
-    repoStore.setRepoConnected('github', true, {
-      username,
-      repo,
       basePath: basePath.trim(),
-      branch: branch || 'main'
+      connected: true
     })
 
     // 如果当前没有激活的仓库，设置为当前
-    if (!repoStore.currentRepo?.connected) {
-      repoStore.setActiveRepo('github')
+    if (!storageStore.hasAnyConnection) {
+      storageStore.setActiveRepo('github')
     }
 
     // 关闭对话框
@@ -876,28 +871,19 @@ const completeGiteeConnect = async () => {
       throw new Error(`访问仓库失败: ${testResponse.status}`)
     }
 
-    // 保存配置到 localStorage
-    const giteeConfig = {
+    // 更新 storageStore
+    storageStore.setGiteeConfig({
       token: token.trim(),
       username,
       repo,
       branch: branch || 'master',
-      basePath: basePath.trim()
-    }
-
-    localStorage.setItem('giteeConfig', JSON.stringify(giteeConfig))
-
-    // 更新 repoStore
-    repoStore.setRepoConnected('gitee', true, {
-      username,
-      repo,
       basePath: basePath.trim(),
-      branch: branch || 'master'
+      connected: true
     })
 
     // 如果当前没有激活的仓库，设置为当前
-    if (!repoStore.currentRepo?.connected) {
-      repoStore.setActiveRepo('gitee')
+    if (!storageStore.hasAnyConnection) {
+      storageStore.setActiveRepo('gitee')
     }
 
     // 关闭对话框
@@ -916,25 +902,25 @@ const completeGiteeConnect = async () => {
   }
 }
 
-// 断开连接（包装 repoStore 的方法，添加 localStorage 清理）
+// 断开连接
 const handleDisconnectRepo = (repoId: RepoType) => {
-  const repo = repoStore.getRepo(repoId)
-  if (!repo) return
+  const repoNames: Record<RepoType, string> = {
+    local: '本地存储',
+    github: 'GitHub',
+    gitee: 'Gitee'
+  }
 
-  ElMessageBox.confirm(`确定要断开 ${repo.name} 吗？`, '提示', {
+  ElMessageBox.confirm(`确定要断开 ${repoNames[repoId]} 吗？`, '提示', {
     confirmButtonText: '确定',
     cancelButtonText: '取消',
     type: 'warning'
   }).then(() => {
-    // 清除 localStorage 中的配置
     if (repoId === 'github') {
-      localStorage.removeItem('githubConfig')
+      storageStore.disconnectGitHub()
     } else if (repoId === 'gitee') {
-      localStorage.removeItem('giteeConfig')
+      storageStore.disconnectGitee()
     }
-
-    repoStore.disconnectRepo(repoId)
-    ElMessage.success(`${repo.name} 已断开`)
+    ElMessage.success(`${repoNames[repoId]} 已断开`)
   }).catch(() => {})
 }
 
@@ -962,8 +948,7 @@ const saveUserConfig = () => {
 }
 
 onMounted(async () => {
-  fsStore.init()
-  repoStore.init()
+  storageStore.init()
 
   // 从 URL 参数初始化标签
   const tabFromQuery = route.query.tab as string
@@ -971,9 +956,9 @@ onMounted(async () => {
     activeTab.value = tabFromQuery as any
   }
 
-  // 尝试验证当前权限状态并同步到 repoStore
-  if (fsStore.articlesDirHandle) {
-    await fsStore.verifyArticlesAccess()
+  // 尝试验证当前权限状态
+  if (storageStore.local.articlesDirHandle) {
+    await localFS.verifyArticlesAccess()
   }
 })
 

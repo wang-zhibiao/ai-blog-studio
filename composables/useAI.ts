@@ -1,25 +1,7 @@
 import { ref, computed } from 'vue'
 import { ElMessage } from 'element-plus'
-
-export interface AIConfig {
-  provider: 'ollama' | 'openai' | 'anthropic' | 'deepseek'
-  apiKey?: string
-  baseUrl?: string
-  model: string
-  temperature?: number
-  maxTokens?: number
-}
-
-export interface AIResponse {
-  content: string
-  usage?: {
-    promptTokens: number
-    completionTokens: number
-    totalTokens: number
-  }
-}
-
-export type AIAction = 'continue' | 'polish' | 'summarize' | 'translate' | 'fix'
+import { useAIStore } from '~/stores/ai'
+import type { AIConfig, AIAction, AIResponse } from '~/types'
 
 const DEFAULT_CONFIG: AIConfig = {
   provider: 'ollama',
@@ -31,31 +13,24 @@ const DEFAULT_CONFIG: AIConfig = {
 const STORAGE_KEY = 'ai-config'
 
 export function useAI() {
-  const config = ref<AIConfig>({ ...DEFAULT_CONFIG })
+  const aiStore = useAIStore()
   const loading = ref(false)
   const error = ref<string | null>(null)
 
-  // 加载配置
+  // config 现在从 aiStore 获取
+  const config = computed({
+    get: () => aiStore.config,
+    set: (val) => aiStore.updateConfig(val)
+  })
+
+  // 加载配置 - 现在由 store 自动处理
   const loadConfig = () => {
-    if (typeof localStorage === 'undefined') return
-    try {
-      const saved = localStorage.getItem(STORAGE_KEY)
-      if (saved) {
-        config.value = { ...DEFAULT_CONFIG, ...JSON.parse(saved) }
-      }
-    } catch (err) {
-      console.error('加载 AI 配置失败:', err)
-    }
+    // persist: true 自动加载，无需手动操作
   }
 
-  // 保存配置
+  // 保存配置 - 现在由 store 自动处理
   const saveConfig = () => {
-    if (typeof localStorage === 'undefined') return
-    try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(config.value))
-    } catch (err) {
-      console.error('保存 AI 配置失败:', err)
-    }
+    // persist: true 自动保存，无需手动操作
   }
 
   // 构建提示词

@@ -1,30 +1,7 @@
 import { defineStore } from 'pinia'
+import type { Category, Tag } from '~/types'
 
-// 分类
-export interface Category {
-  id: string
-  name: string
-  slug: string
-  description?: string
-  color?: string
-  icon?: string
-  order: number
-  parentId?: string
-  articleCount: number
-  createdAt: string
-  updatedAt: string
-}
-
-// 标签
-export interface Tag {
-  id: string
-  name: string
-  slug: string
-  color?: string
-  articleCount: number
-  createdAt: string
-  updatedAt: string
-}
+export type { Category, Tag } from '~/types'
 
 export const useTaxonomyStore = defineStore('taxonomy', {
   state: () => ({
@@ -203,31 +180,20 @@ export const useTaxonomyStore = defineStore('taxonomy', {
           tag.updatedAt = new Date().toISOString()
         }
       })
-    },
-
-    // 持久化到 localStorage
-    saveToStorage() {
-      if (typeof localStorage === 'undefined') return
-      localStorage.setItem('taxonomy-data', JSON.stringify({
-        categories: this.categories,
-        tags: this.tags
-      }))
-    },
-
-    loadFromStorage() {
-      if (typeof localStorage === 'undefined') return
-      try {
-        const saved = localStorage.getItem('taxonomy-data')
-        if (saved) {
-          const data = JSON.parse(saved)
-          this.categories = data.categories || []
-          this.tags = data.tags || []
-        }
-      } catch (e) {
-        console.error('加载分类数据失败:', e)
-      }
     }
+    // persist: true 自动处理持久化，无需手动操作 localStorage
   },
 
   persist: true
 })
+
+// 初始化跨标签页同步
+if (typeof window !== 'undefined') {
+  const { useCrossTabSync } = require('~/composables/useCrossTabSync')
+  useCrossTabSync(useTaxonomyStore, {
+    channel: 'taxonomy_sync',
+    pick: ['categories', 'tags'],
+    strategy: 'replace',
+    debug: import.meta.dev
+  })
+}

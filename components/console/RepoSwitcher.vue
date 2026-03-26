@@ -20,7 +20,7 @@
         />
         <FaIcon
           v-else
-          icon="folder"
+          :icon="'folder'"
           class="text-[rgb(var(--color-primary))] text-base"
         />
       </span>
@@ -36,7 +36,7 @@
 
       <!-- 下拉箭头 -->
       <FaIcon
-        icon="angle-down"
+        :icon="'angle-down'"
         class="text-[rgb(var(--color-text-muted))] text-sm transition-transform duration-200"
         :class="{ 'rotate-180': isOpen }"
       />
@@ -63,7 +63,7 @@
         <!-- 仓库列表 -->
         <div class="py-1">
           <button
-            v-for="repo in repoStore.repos"
+            v-for="repo in repos"
             :key="repo.id"
             @click="selectRepo(repo.id)"
             class="w-full px-3 py-2.5 flex items-center gap-3 hover:bg-[rgb(var(--color-surface-light))] transition-colors cursor-pointer"
@@ -83,7 +83,7 @@
               />
               <FaIcon
                 v-else
-                icon="folder"
+                :icon="'folder'"
                 class="text-[rgb(var(--color-primary))] text-lg"
               />
             </span>
@@ -94,7 +94,7 @@
             <!-- 选中标记 -->
             <FaIcon
               v-if="currentRepo?.id === repo.id"
-              icon="check"
+              :icon="'check'"
               class="text-[rgb(var(--color-primary))] text-sm"
             />
           </button>
@@ -110,16 +110,32 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
 import { ElMessage } from 'element-plus'
-import { useRepoStore, type RepoType } from '~/stores/repo'
+import { useStorageStore, type RepoType } from '~/stores/storage'
 
-const repoStore = useRepoStore()
+const storageStore = useStorageStore()
 const isOpen = ref(false)
 
-const currentRepo = computed(() => repoStore.currentRepo)
+// 当前激活的仓库
+const currentRepo = computed(() => {
+  const repoId = storageStore.activeRepo
+  const repoInfo = {
+    local: { id: 'local', name: '本地存储', connected: storageStore.local.connected },
+    github: { id: 'github', name: 'GitHub', connected: storageStore.remoteRepos.github.connected },
+    gitee: { id: 'gitee', name: 'Gitee', connected: storageStore.remoteRepos.gitee.connected }
+  }[repoId]
+  return { ...repoInfo, id: repoId }
+})
+
+// 可用的仓库列表
+const repos = computed(() => [
+  { id: 'local', name: '本地存储', connected: storageStore.local.connected },
+  { id: 'github', name: 'GitHub', connected: storageStore.remoteRepos.github.connected },
+  { id: 'gitee', name: 'Gitee', connected: storageStore.remoteRepos.gitee.connected }
+])
 
 const selectRepo = (repoId: RepoType) => {
-  repoStore.setActiveRepo(repoId)
-  const repo = repoStore.getRepo(repoId)
+  storageStore.activeRepo = repoId
+  const repo = repos.value.find(r => r.id === repoId)
   if (repo) {
     ElMessage.success(`已切换到 ${repo.name}`)
   }

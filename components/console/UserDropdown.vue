@@ -21,13 +21,16 @@
           <div class="text-xs text-[rgb(var(--color-text-muted))] px-2 py-1">当前仓库</div>
         </div>
         <el-dropdown-item
-          v-for="repo in repoStore.repos"
+          v-for="repo in repos"
           :key="repo.id"
           :command="repo.id"
           class="flex items-center gap-2"
           :class="{ 'bg-[rgba(var(--color-primary),0.1)]': repo.active }"
         >
-          <FaIcon :icon="repo.icon" class="text-xl" />
+          <FaIcon
+            :icon="repo.id === 'github' ? ['fab', 'github'] : repo.id === 'gitee' ? ['fab', 'gitee'] : 'folder'"
+            class="text-xl"
+          />
           <span class="flex-1">{{ repo.name }}</span>
           <span v-if="repo.active" class="text-xs text-[rgb(var(--color-primary))]">
             <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
@@ -47,18 +50,41 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
-import { useRepoStore, type RepoType } from '~/stores/repo'
+import { useStorageStore, type RepoType } from '~/stores/storage'
 
 const router = useRouter()
-const repoStore = useRepoStore()
+const storageStore = useStorageStore()
 
 const userName = ref('博客作者')
 const userEmail = ref('author@example.com')
 
 const userInitial = computed(() => userName.value.charAt(0).toUpperCase())
+
+// 构建兼容的仓库列表
+const repos = computed(() => [
+  {
+    id: 'local' as RepoType,
+    name: '本地存储',
+    connected: storageStore.local.connected,
+    active: storageStore.activeRepo === 'local'
+  },
+  {
+    id: 'github' as RepoType,
+    name: 'GitHub',
+    connected: storageStore.remoteRepos.github.connected,
+    active: storageStore.activeRepo === 'github'
+  },
+  {
+    id: 'gitee' as RepoType,
+    name: 'Gitee',
+    connected: storageStore.remoteRepos.gitee.connected,
+    active: storageStore.activeRepo === 'gitee'
+  }
+])
+
 
 const handleCommand = (command: string) => {
   if (command === 'logout') {
@@ -67,9 +93,9 @@ const handleCommand = (command: string) => {
     router.push('/console/settings')
   } else {
     const repoId = command as RepoType
-    const repo = repoStore.getRepo(repoId)
+    const repo = repos.value.find(r => r.id === repoId)
     if (repo) {
-      repoStore.setActiveRepo(repoId)
+      storageStore.activeRepo = repoId
       ElMessage.success(`已切换到 ${repo.name}`)
     }
   }
