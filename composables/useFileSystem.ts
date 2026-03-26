@@ -26,7 +26,7 @@ import { useStorageStore } from '~/stores/storage'
 
 // ==================== 错误处理 ====================
 
-function createError(
+function createFileSystemError(
   message: string,
   code: FileSystemErrorCode,
   status?: number,
@@ -111,7 +111,7 @@ function createLocalFS() {
   // 选择文章目录
   const selectArticlesDir = async (): Promise<FileSystemDirectoryHandle | null> => {
     if (!state.isSupported) {
-      throw createError('File System Access API 不被支持', 'NOT_SUPPORTED')
+      throw createFileSystemError('File System Access API 不被支持', 'NOT_SUPPORTED')
     }
     try {
       const handle = await window.showDirectoryPicker({
@@ -125,14 +125,14 @@ function createLocalFS() {
       if ((err as Error).name === 'AbortError') {
         return null
       }
-      throw createError('选择目录失败: ' + (err as Error).message, 'UNKNOWN_ERROR', undefined, err)
+      throw createFileSystemError('选择目录失败: ' + (err as Error).message, 'UNKNOWN_ERROR', undefined, err)
     }
   }
 
   // 选择媒体目录
   const selectMediaDir = async (): Promise<FileSystemDirectoryHandle | null> => {
     if (!state.isSupported) {
-      throw createError('File System Access API 不被支持', 'NOT_SUPPORTED')
+      throw createFileSystemError('File System Access API 不被支持', 'NOT_SUPPORTED')
     }
     try {
       const handle = await window.showDirectoryPicker({
@@ -146,7 +146,7 @@ function createLocalFS() {
       if ((err as Error).name === 'AbortError') {
         return null
       }
-      throw createError('选择目录失败: ' + (err as Error).message, 'UNKNOWN_ERROR', undefined, err)
+      throw createFileSystemError('选择目录失败: ' + (err as Error).message, 'UNKNOWN_ERROR', undefined, err)
     }
   }
 
@@ -194,7 +194,7 @@ function createLocalFS() {
       return state.mediaDirHandle
     }
     if (!state.articlesDirHandle) {
-      throw createError('请先配置文章目录', 'DIRECTORY_NOT_FOUND')
+      throw createFileSystemError('请先配置文章目录', 'DIRECTORY_NOT_FOUND')
     }
     return await state.articlesDirHandle.getDirectoryHandle('assets', { create: true })
   }
@@ -311,10 +311,10 @@ function createLocalFS() {
     getFileType,
 
     // 文章操作（Local FS 实现）
-    loadArticles: async () => { throw createError('Not implemented', 'UNKNOWN_ERROR') },
-    saveArticle: async () => { throw createError('Not implemented', 'UNKNOWN_ERROR') },
-    deleteArticle: async () => { throw createError('Not implemented', 'UNKNOWN_ERROR') },
-    getArticle: async () => { throw createError('Not implemented', 'UNKNOWN_ERROR') }
+    loadArticles: async () => { throw createFileSystemError('Not implemented', 'UNKNOWN_ERROR') },
+    saveArticle: async () => { throw createFileSystemError('Not implemented', 'UNKNOWN_ERROR') },
+    deleteArticle: async () => { throw createFileSystemError('Not implemented', 'UNKNOWN_ERROR') },
+    getArticle: async () => { throw createFileSystemError('Not implemented', 'UNKNOWN_ERROR') }
   }
 }
 
@@ -359,7 +359,7 @@ function createGitHubAPI(config: GitHubStorageConfig): RemoteAPI {
           422: 'VALIDATION_ERROR'
         }
 
-        throw createError(message, codeMap[response.status] || 'API_ERROR', response.status)
+        throw createFileSystemError(message, codeMap[response.status] || 'API_ERROR', response.status)
       }
 
       if (response.status === 204) return null
@@ -367,9 +367,9 @@ function createGitHubAPI(config: GitHubStorageConfig): RemoteAPI {
     } catch (err) {
       if ((err as FileSystemError).code) throw err
       if (err instanceof TypeError && err.message.includes('fetch')) {
-        throw createError('网络错误，请检查网络连接', 'NETWORK_ERROR')
+        throw createFileSystemError('网络错误，请检查网络连接', 'NETWORK_ERROR')
       }
-      throw createError(err instanceof Error ? err.message : '未知错误', 'UNKNOWN_ERROR', undefined, err)
+      throw createFileSystemError(err instanceof Error ? err.message : '未知错误', 'UNKNOWN_ERROR', undefined, err)
     }
   }
 
@@ -465,7 +465,7 @@ function createGiteeAPI(config: GiteeStorageConfig): RemoteAPI {
           422: 'VALIDATION_ERROR'
         }
 
-        throw createError(message, codeMap[response.status] || 'API_ERROR', response.status)
+        throw createFileSystemError(message, codeMap[response.status] || 'API_ERROR', response.status)
       }
 
       if (response.status === 204) return null
@@ -473,9 +473,9 @@ function createGiteeAPI(config: GiteeStorageConfig): RemoteAPI {
     } catch (err) {
       if ((err as FileSystemError).code) throw err
       if (err instanceof TypeError && err.message.includes('fetch')) {
-        throw createError('网络错误，请检查网络连接', 'NETWORK_ERROR')
+        throw createFileSystemError('网络错误，请检查网络连接', 'NETWORK_ERROR')
       }
-      throw createError(err instanceof Error ? err.message : '未知错误', 'UNKNOWN_ERROR', undefined, err)
+      throw createFileSystemError(err instanceof Error ? err.message : '未知错误', 'UNKNOWN_ERROR', undefined, err)
     }
   }
 
@@ -771,7 +771,7 @@ export function useFileSystem(config: StorageConfig) {
       }
 
       default:
-        throw createError(`不支持的存储类型: ${type}`, 'VALIDATION_ERROR')
+        throw createFileSystemError(`不支持的存储类型: ${type}`, 'VALIDATION_ERROR')
     }
   }
 
@@ -875,7 +875,7 @@ function createRemoteStorageBase(api: RemoteAPI, config: StorageConfig) {
     const path = `assets/${filename}`
     const result = await api.getFileContent(path)
     if (!result) {
-      throw createError('文件不存在', 'NOT_FOUND', 404)
+      throw createFileSystemError('文件不存在', 'NOT_FOUND', 404)
     }
     await api.deleteFile(path, result.sha, `Delete media: ${filename}`)
   }
@@ -914,4 +914,4 @@ function createRemoteStorageBase(api: RemoteAPI, config: StorageConfig) {
 // ==================== 导出 ====================
 
 export { createLocalFS, createGitHubAPI, createGiteeAPI, createArticleOperations }
-export { encodeBase64, decodeBase64, arrayBufferToBase64, getFileType, createError }
+export { encodeBase64, decodeBase64, arrayBufferToBase64, getFileType, createFileSystemError }

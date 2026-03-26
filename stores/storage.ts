@@ -173,13 +173,14 @@ export const useStorageStore = defineStore('storage', {
   }
 })
 
-// 初始化跨标签页同步
+// 初始化跨标签页同步（仅在客户端）
 if (typeof window !== 'undefined') {
-  const { useCrossTabSync } = require('~/composables/useCrossTabSync')
-  useCrossTabSync(useStorageStore, {
-    channel: 'storage_sync',
-    pick: ['remoteRepos', 'activeRepo'],
-    strategy: 'replace',
-    debug: import.meta.dev
+  import('~/composables/useCrossTabSync').then(({ useCrossTabSync }) => {
+    useCrossTabSync(useStorageStore, {
+      channel: 'storage_sync',
+      pick: ['remoteRepos', 'activeRepo'],
+      strategy: 'replace',
+      debug: import.meta.dev
+    })
   })
 }

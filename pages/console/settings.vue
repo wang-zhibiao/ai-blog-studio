@@ -537,15 +537,15 @@ import { ElMessage, ElMessageBox } from 'element-plus'
 import { FolderOpened, CircleCheck, Delete, Warning, InfoFilled } from '@element-plus/icons-vue'
 import ThemeSwitcher from '~/components/ThemeSwitcher.vue'
 import ConsoleLayout from '~/components/layout/ConsoleLayout.vue'
-import { useLocalFS } from '~/composables/useLocalFS'
 import { useStorageStore, type RepoType } from '~/stores/storage'
 import { useAIStore } from '~/stores/ai'
-import { useGitHubFS, type GitHubConfig } from '~/composables/useGitHubFS'
+import { createLocalFS, createGitHubAPI } from '~/composables/useFileSystem'
+import type { GitHubStorageConfig } from '~/types/fs'
 
 const route = useRoute()
 const router = useRouter()
 const activeTab = ref<'theme' | 'repos' | 'ai' | 'user'>('theme')
-const localFS = useLocalFS()
+const localFS = createLocalFS()
 const storageStore = useStorageStore()
 const aiStore = useAIStore()
 

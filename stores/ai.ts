@@ -57,13 +57,14 @@ export const useAIStore = defineStore('ai', {
   persist: true
 })
 
-// 初始化跨标签页同步
+// 初始化跨标签页同步（仅在客户端）
 if (typeof window !== 'undefined') {
-  const { useCrossTabSync } = require('~/composables/useCrossTabSync')
-  useCrossTabSync(useAIStore, {
-    channel: 'ai_sync',
-    pick: ['config'],
-    strategy: 'merge',
-    debug: import.meta.dev
+  import('~/composables/useCrossTabSync').then(({ useCrossTabSync }) => {
+    useCrossTabSync(useAIStore, {
+      channel: 'ai_sync',
+      pick: ['config'],
+      strategy: 'merge',
+      debug: import.meta.dev
+    })
   })
 }

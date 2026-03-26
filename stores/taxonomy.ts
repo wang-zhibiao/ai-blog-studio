@@ -187,13 +187,14 @@ export const useTaxonomyStore = defineStore('taxonomy', {
   persist: true
 })
 
-// 初始化跨标签页同步
+// 初始化跨标签页同步（仅在客户端）
 if (typeof window !== 'undefined') {
-  const { useCrossTabSync } = require('~/composables/useCrossTabSync')
-  useCrossTabSync(useTaxonomyStore, {
-    channel: 'taxonomy_sync',
-    pick: ['categories', 'tags'],
-    strategy: 'replace',
-    debug: import.meta.dev
+  import('~/composables/useCrossTabSync').then(({ useCrossTabSync }) => {
+    useCrossTabSync(useTaxonomyStore, {
+      channel: 'taxonomy_sync',
+      pick: ['categories', 'tags'],
+      strategy: 'replace',
+      debug: import.meta.dev
+    })
   })
 }
