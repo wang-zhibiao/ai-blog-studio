@@ -2,10 +2,6 @@ import { useFsStore } from '~/stores/fs'
 import type { Article, ArticleMeta, ContentFormat, MediaFile } from '~/types/article'
 import { generateFileName, parseFileName, generateArticleId, generateExcerpt } from '~/types/article'
 
-// meta.json 存储结构
-interface ArticlesMeta {
-  articles: ArticleMeta[]
-}
 
 export function useLocalFS() {
   const fsStore = useFsStore()
@@ -90,7 +86,12 @@ export function useLocalFS() {
     const mediaDir = await getMediaDirHandle()
 
     // 生成唯一文件名
-    const ext = file instanceof File ? file.name.split('.').pop() : 'png'
+    let ext = file instanceof File ? file.name.split('.').pop() : 'png'
+    // 验证扩展名是否有效，无效则默认使用 'png'
+    const validExts = ['jpg', 'jpeg', 'png', 'gif', 'svg', 'webp', 'bmp', 'mp4', 'webm', 'mov', 'avi']
+    if (!ext || !validExts.includes(ext.toLowerCase())) {
+      ext = 'png'
+    }
     const uniqueName = filename || `${Date.now()}-${crypto.randomUUID().slice(0, 8)}.${ext}`
 
     const fileHandle = await mediaDir.getFileHandle(uniqueName, { create: true })
@@ -193,8 +194,8 @@ export function useLocalFS() {
       const metaFile = await fsStore.articlesDirHandle.getFileHandle('meta.json')
       const file = await metaFile.getFile()
       const content = await file.text()
-      const data = JSON.parse(content) as ArticlesMeta
-      return data.articles || []
+      const data = JSON.parse(content) as ArticleMeta[]
+      return Array.isArray(data) ? data : []
     } catch {
       // meta.json 不存在，初始化空数组
       return []
@@ -209,7 +210,7 @@ export function useLocalFS() {
 
     const metaFile = await fsStore.articlesDirHandle.getFileHandle('meta.json', { create: true })
     const writable = await metaFile.createWritable()
-    await writable.write(JSON.stringify({ articles: articlesMeta }, null, 2))
+    await writable.write(JSON.stringify(articlesMeta, null, 2))
     await writable.close()
   }
 

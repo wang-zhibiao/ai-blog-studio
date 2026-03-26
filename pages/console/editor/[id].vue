@@ -16,12 +16,24 @@ import { useRoute, useRouter } from 'vue-router'
 import { Loading } from '@element-plus/icons-vue'
 import { ElMessage } from 'element-plus'
 import EditorPage from './index.vue'
-import { useLocalFS } from '~/composables/useLocalFS'
+import { useStorage } from '~/composables/useStorage'
+import { useRepoStore } from '~/stores/repo'
 import type { Article } from '~/types/article'
 
 const route = useRoute()
 const router = useRouter()
-const localFS = useLocalFS()
+const storage = useStorage()
+const repoStore = useRepoStore()
+
+// 计算属性：检查存储是否就绪
+const isStorageReady = computed(() => {
+  const repo = repoStore.currentRepo
+  if (!repo) return false
+  if (repo.id === 'local') {
+    return storage.hasArticlesAccess?.value || false
+  }
+  return repo.connected
+})
 
 const loading = ref(true)
 const article = ref<Article | null>(null)
@@ -35,9 +47,9 @@ onMounted(async () => {
     return
   }
 
-  // 检查是否有权限访问本地存储
-  if (!localFS.hasArticlesAccess.value) {
-    ElMessage.warning('请先配置本地存储')
+  // 检查存储是否就绪
+  if (!isStorageReady.value) {
+    ElMessage.warning('请先配置存储')
     router.push('/console/settings')
     return
   }
@@ -45,13 +57,8 @@ onMounted(async () => {
   try {
     loading.value = true
 
-    // 获取文章目录 handle
-    if (!localFS.config.value.articlesDirHandle) {
-      throw new Error('文章目录未配置')
-    }
-
-    // 从文件系统加载文章
-    const articles = await localFS.loadArticles()
+    // 从存储加载文章
+    const articles = await storage.loadArticles()
     const foundArticle = articles.find(a => a.id === articleId)
 
     if (!foundArticle) {

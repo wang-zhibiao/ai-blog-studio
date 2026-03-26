@@ -22,7 +22,8 @@ import { useRepoStore } from '~/stores/repo'
 
 const repoStore = useRepoStore()
 const hasAccess = computed(() => {
-  const localRepo = repoStore.getRepo('local')
-  return localRepo?.connected || false
+  // 检查当前活动仓库是否已连接
+  const currentRepo = repoStore.currentRepo
+  return currentRepo?.connected || false
 })
 </script>

@@ -130,8 +130,10 @@ export function parseFileName(fileName: string): ParsedFileName | null {
   const match = fileName.match(/^(.+)-(.+)-(\d{4}-\d{2}-\d{2})\s(\d{4})\.(md|html)$/)
   if (!match) return null
 
-  const [, title, category, dateStr, timeStr, ext] = match
-  const date = new Date(`${dateStr} ${timeStr.substring(0, 2)}:${timeStr.substring(2)}`)
+  const [, titleMatch, categoryMatch, dateStr, timeStr, ext] = match
+  const title = titleMatch ?? ''
+  const category = categoryMatch ?? ''
+  const date = new Date(`${dateStr} ${timeStr?.substring(0, 2) ?? '00'}:${timeStr?.substring(2) ?? '00'}`)
 
   return {
     title: title.replace(/_/g, ' '),

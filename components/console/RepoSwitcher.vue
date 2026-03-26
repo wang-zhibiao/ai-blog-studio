@@ -1,45 +1,128 @@
 <template>
-  <el-select v-model="selectedRepo" @change="handleRepoChange" class="w-[160px]">
-    <el-option
-      v-for="repo in repoStore.repos"
-      :key="repo.id"
-      :value="repo.id"
-      :label="repo.name"
+  <div class="relative">
+    <!-- 触发按钮 -->
+    <button
+      @click="isOpen = !isOpen"
+      class="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-[rgb(var(--color-surface-light))] border border-[rgb(var(--color-border))] hover:border-[rgb(var(--color-primary))] hover:shadow-sm transition-all duration-200 cursor-pointer"
+      :class="{ 'ring-2 ring-[rgb(var(--color-primary))] ring-opacity-20': isOpen }"
     >
-      <div class="flex items-center gap-2">
-        <span class="flex items-center">
-          <svg v-if="repo.type === 'github'" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" class="text-[#6e7681]"><path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/></svg>
-          <svg v-else-if="repo.type === 'gitee'" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" class="text-[#c71d23]"><path d="M11.984 0A12 12 0 0 0 0 12a12 12 0 0 0 12 12 12 12 0 0 0 12-12A12 12 0 0 0 12 0a12 12 0 0 0-.016 0zm6.09 5.333c.328 0 .593.266.592.593v1.482a.594.594 0 0 1-.593.593H9.778c-.982 0-1.778.796-1.778 1.778v5.63c0 .982.796 1.778 1.778 1.778h8.296c.982 0 1.778-.796 1.778-1.778v-.296a.593.593 0 0 0-.593-.593h-5.63a.593.593 0 0 1-.593-.593v-1.482c0-.327.265-.592.593-.592h6.815c.982 0 1.778-.796 1.778-1.779V6.903c0-.983-.796-1.778-1.778-1.778h-7.41z"/></svg>
-          <svg v-else xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 20a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9L9.6 3.9A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2Z"/></svg>
-        </span>
-        <span class="flex-1">{{ repo.name }}</span>
-        <span v-if="repo.connected" class="text-xs text-green-500 flex items-center">
-          <svg xmlns="http://www.w3.org/2000/svg" width="8" height="8" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="12" r="10"/></svg>
-        </span>
-        <span v-else class="text-xs text-gray-400 flex items-center">
-          <svg xmlns="http://www.w3.org/2000/svg" width="8" height="8" viewBox="0 0 24 24" fill="currentColor" class="opacity-50"><circle cx="12" cy="12" r="10"/></svg>
-        </span>
+      <!-- 当前仓库图标 -->
+      <span class="flex items-center">
+        <FaIcon
+          v-if="currentRepo?.id === 'github'"
+          :icon="['fab', 'github']"
+          class="text-[#6e7681] text-base"
+        />
+        <FaIcon
+          v-else-if="currentRepo?.id === 'gitee'"
+          :icon="['fab', 'gitee']"
+          class="text-[#c71d23] text-base"
+        />
+        <FaIcon
+          v-else
+          icon="folder"
+          class="text-[rgb(var(--color-primary))] text-base"
+        />
+      </span>
+
+      <!-- 当前仓库名称 -->
+      <span class="text-sm font-medium text-[rgb(var(--color-text))]">{{ currentRepo?.name }}</span>
+
+      <!-- 连接状态指示器 -->
+      <span
+        class="w-2 h-2 rounded-full"
+        :class="currentRepo?.connected ? 'bg-green-500' : 'bg-gray-400'"
+      ></span>
+
+      <!-- 下拉箭头 -->
+      <FaIcon
+        icon="angle-down"
+        class="text-[rgb(var(--color-text-muted))] text-sm transition-transform duration-200"
+        :class="{ 'rotate-180': isOpen }"
+      />
+    </button>
+
+    <!-- 下拉菜单 -->
+    <Transition
+      enter-active-class="transition-all duration-200 ease-out"
+      enter-from-class="opacity-0 -translate-y-2 scale-95"
+      enter-to-class="opacity-100 translate-y-0 scale-100"
+      leave-active-class="transition-all duration-150 ease-in"
+      leave-from-class="opacity-100 translate-y-0 scale-100"
+      leave-to-class="opacity-0 -translate-y-2 scale-95"
+    >
+      <div
+        v-if="isOpen"
+        class="absolute right-0 top-full mt-2 w-64 rounded-xl bg-[rgb(var(--color-surface))] border border-[rgb(var(--color-border))] shadow-lg shadow-black/10 z-50 overflow-hidden"
+      >
+        <!-- 菜单标题 -->
+        <div class="px-3 py-2 border-b border-[rgb(var(--color-border))]">
+          <span class="text-xs font-medium text-[rgb(var(--color-text-muted))] uppercase tracking-wide">选择仓库</span>
+        </div>
+
+        <!-- 仓库列表 -->
+        <div class="py-1">
+          <button
+            v-for="repo in repoStore.repos"
+            :key="repo.id"
+            @click="selectRepo(repo.id)"
+            class="w-full px-3 py-2.5 flex items-center gap-3 hover:bg-[rgb(var(--color-surface-light))] transition-colors cursor-pointer"
+            :class="{ 'bg-[rgb(var(--color-primary))]/10': currentRepo?.id === repo.id }"
+          >
+            <!-- 仓库图标 -->
+            <span class="flex items-center">
+              <FaIcon
+                v-if="repo.id === 'github'"
+                :icon="['fab', 'github']"
+                class="text-[#6e7681] text-lg"
+              />
+              <FaIcon
+                v-else-if="repo.id === 'gitee'"
+                :icon="['fab', 'gitee']"
+                class="text-[#c71d23] text-lg"
+              />
+              <FaIcon
+                v-else
+                icon="folder"
+                class="text-[rgb(var(--color-primary))] text-lg"
+              />
+            </span>
+
+            <!-- 仓库名称 -->
+            <span class="flex-1 text-sm text-[rgb(var(--color-text))] text-left">{{ repo.name }}</span>
+
+            <!-- 选中标记 -->
+            <FaIcon
+              v-if="currentRepo?.id === repo.id"
+              icon="check"
+              class="text-[rgb(var(--color-primary))] text-sm"
+            />
+          </button>
+        </div>
       </div>
-    </el-option>
-  </el-select>
+    </Transition>
+
+    <!-- 点击外部关闭 -->
+    <div v-if="isOpen" class="fixed inset-0 z-40" @click="isOpen = false"></div>
+  </div>
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue'
+import { ref, computed } from 'vue'
 import { ElMessage } from 'element-plus'
 import { useRepoStore, type RepoType } from '~/stores/repo'
 
 const repoStore = useRepoStore()
+const isOpen = ref(false)
 
-const selectedRepo = computed<RepoType>({
-  get: () => repoStore.currentRepo.id,
-  set: (val) => repoStore.setActiveRepo(val)
-})
+const currentRepo = computed(() => repoStore.currentRepo)
 
-const handleRepoChange = (repoId: RepoType) => {
+const selectRepo = (repoId: RepoType) => {
+  repoStore.setActiveRepo(repoId)
   const repo = repoStore.getRepo(repoId)
   if (repo) {
     ElMessage.success(`已切换到 ${repo.name}`)
   }
+  isOpen.value = false
 }
 </script>

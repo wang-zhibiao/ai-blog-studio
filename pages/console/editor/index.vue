@@ -149,7 +149,8 @@ import { useRoute, useRouter } from 'vue-router'
 import { ArrowLeft, DocumentCopy, Promotion, Setting, MagicStick, Star, Brush, Document, Plus } from '@element-plus/icons-vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import ArticleEditor from '~/components/editor/ArticleEditor.vue'
-import { useLocalFS } from '~/composables/useLocalFS'
+import { useStorage } from '~/composables/useStorage'
+import { useRepoStore } from '~/stores/repo'
 import { useArticleStore } from '~/stores/article'
 import type { EditorArticle, Article } from '~/types/article'
 
@@ -162,8 +163,19 @@ const props = defineProps<{
 // 路由和状态
 const route = useRoute()
 const router = useRouter()
-const localFS = useLocalFS()
+const storage = useStorage()
+const repoStore = useRepoStore()
 const articleStore = useArticleStore()
+
+// 计算属性：检查存储是否就绪
+const isStorageReady = computed(() => {
+  const repo = repoStore.currentRepo
+  if (!repo) return false
+  if (repo.id === 'local') {
+    return storage.hasArticlesAccess?.value || false
+  }
+  return repo.connected
+})
 
 // 状态
 const isEditMode = computed(() => props.isEditing || !!route.params.id)
@@ -315,8 +327,8 @@ watch(() => article.value.contentFormat, (newFormat, oldFormat) => {
 
 onMounted(async () => {
   // 加载文章列表以获取分类和标签
-  if (localFS.hasArticlesAccess.value) {
-    const articles = await localFS.loadArticles()
+  if (storage.hasArticlesAccess?.value) {
+    const articles = await storage.loadArticles()
     articleStore.articles = articles
   }
 
@@ -341,7 +353,7 @@ const saveDraft = async () => {
   saveLoading.value = true
   try {
     const articleData = articleStore.createFromEditor(article.value, props.initialArticle || undefined)
-    await localFS.saveArticle(articleData)
+    await storage.saveArticle(articleData)
     ElMessage.success('草稿已保存')
   } catch (err) {
     console.error('保存失败:', err)
@@ -367,7 +379,7 @@ const publish = async () => {
   try {
     article.value.isPublished = true
     const articleData = articleStore.createFromEditor(article.value, props.initialArticle || undefined)
-    await localFS.saveArticle(articleData)
+    await storage.saveArticle(articleData)
     ElMessage.success(isEditing.value ? '文章已更新' : '文章已发布')
     router.push('/console/articles')
   } catch (err) {

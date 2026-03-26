@@ -114,10 +114,22 @@ import { Search, Loading } from '@element-plus/icons-vue'
 import { ElMessage } from 'element-plus'
 import ConsoleLayout from '~/components/layout/ConsoleLayout.vue'
 import RepoGuard from '~/components/console/RepoGuard.vue'
-import { useLocalFS } from '~/composables/useLocalFS'
+import { useStorage } from '~/composables/useStorage'
+import { useRepoStore } from '~/stores/repo'
 import type { Article } from '~/types/article'
 
-const localFS = useLocalFS()
+const storage = useStorage()
+const repoStore = useRepoStore()
+
+// 计算属性：检查存储是否就绪
+const isStorageReady = computed(() => {
+  const repo = repoStore.currentRepo
+  if (!repo) return false
+  if (repo.id === 'local') {
+    return storage.hasArticlesAccess?.value || false
+  }
+  return repo.connected
+})
 
 const activeTab = ref<'categories' | 'tags'>('categories')
 const categorySearch = ref('')
@@ -173,14 +185,14 @@ const filteredTags = computed(() => {
 })
 
 const loadArticles = async () => {
-  if (!localFS.hasArticlesAccess.value) return
+  if (!isStorageReady.value) return
 
   loading.value = true
   try {
-    articles.value = await localFS.loadArticles()
+    articles.value = await storage.loadArticles()
   } catch (err) {
     console.error('加载文章失败:', err)
-    ElMessage.error('加载文章失败')
+    ElMessage.error('加载文章失败: ' + (err instanceof Error ? err.message : '未知错误'))
   } finally {
     loading.value = false
   }

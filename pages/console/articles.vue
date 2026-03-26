@@ -170,12 +170,24 @@ import { ElMessageBox, ElMessage } from 'element-plus'
 import ConsoleLayout from '~/components/layout/ConsoleLayout.vue'
 import SearchBar from '~/components/console/SearchBar.vue'
 import RepoGuard from '~/components/console/RepoGuard.vue'
-import { useLocalFS } from '~/composables/useLocalFS'
+import { useStorage } from '~/composables/useStorage'
+import { useRepoStore } from '~/stores/repo'
 import type { Article } from '~/types/article'
 import { generateExcerpt } from '~/types/article'
 
 const router = useRouter()
-const localFS = useLocalFS()
+const storage = useStorage()
+const repoStore = useRepoStore()
+
+// 计算属性：检查当前存储是否就绪
+const isStorageReady = computed(() => {
+  const repo = repoStore.currentRepo
+  if (!repo) return false
+  if (repo.id === 'local') {
+    return storage.hasArticlesAccess?.value || false
+  }
+  return repo.connected
+})
 
 // 从文章内容中提取纯文本
 const getArticlePlainText = (article: Article): string => {
@@ -251,14 +263,14 @@ const handleSearch = () => {
 }
 
 const loadArticles = async () => {
-  if (!localFS.hasArticlesAccess.value) return
+  if (!isStorageReady.value) return
 
   loading.value = true
   try {
-    articles.value = await localFS.loadArticles()
+    articles.value = await storage.loadArticles()
   } catch (err) {
     console.error('加载文章失败:', err)
-    ElMessage.error('加载文章失败')
+    ElMessage.error('加载文章失败: ' + (err instanceof Error ? err.message : '未知错误'))
   } finally {
     loading.value = false
   }
@@ -275,12 +287,12 @@ const deleteArticle = async (article: Article) => {
     type: 'warning'
   }).then(async () => {
     try {
-      await localFS.deleteArticle(article.id)
+      await storage.deleteArticle(article.id)
       articles.value = articles.value.filter(a => a.id !== article.id)
       ElMessage.success('删除成功')
     } catch (err) {
       console.error('删除文章失败:', err)
-      ElMessage.error('删除失败')
+      ElMessage.error('删除失败: ' + (err instanceof Error ? err.message : '未知错误'))
     }
   }).catch(() => {})
 }
@@ -290,7 +302,7 @@ onMounted(() => {
 })
 
 // 监听权限状态变化，重新加载文章
-watch(() => localFS.hasArticlesAccess.value, (hasAccess) => {
+watch(() => isStorageReady.value, (hasAccess) => {
   if (hasAccess) {
     loadArticles()
   } else {

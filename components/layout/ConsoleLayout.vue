@@ -18,8 +18,8 @@
       </div>
 
       <div class="flex items-center gap-4">
-        <!-- 用户下拉 -->
-        <UserDropdown />
+        <!-- 仓库切换 -->
+        <RepoSwitcher />
       </div>
     </header>
 
@@ -34,6 +34,5 @@
 
 <script setup lang="ts">
 import HeaderNav from '~/components/console/HeaderNav.vue'
-import UserDropdown from '~/components/console/UserDropdown.vue'
 import RepoSwitcher from '~/components/console/RepoSwitcher.vue'
 </script>

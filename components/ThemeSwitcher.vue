@@ -34,17 +34,21 @@
 </template>
 
 <script setup lang="ts">
-import { computed, watch } from 'vue'
+import { computed, onMounted } from 'vue'
+import { storeToRefs } from 'pinia'
 import { useThemeStore, type ThemeColor, type ThemeMode } from '../stores/theme'
 
 const themeStore = useThemeStore()
-const currentColor = computed(() => themeStore.currentColor)
-const currentMode = computed(() => themeStore.currentMode)
+
+// 使用 storeToRefs 保持响应式
+const { currentColor, currentMode, isInitialized } = storeToRefs(themeStore)
+
 const themeColors = computed(() => Object.keys(themeStore.fullThemeSchemes) as ThemeColor[])
 
-// 确保组件在 store 初始化后重新渲染
-watch(() => themeStore.isInitialized, () => {
-  // 触发重新计算
+// 确保组件挂载时主题已初始化
+// 注意：每次挂载都调用 initTheme，确保页面刷新后能正确恢复主题
+onMounted(() => {
+  themeStore.initTheme()
 })
 
 const getColorPreview = (color: ThemeColor) => {

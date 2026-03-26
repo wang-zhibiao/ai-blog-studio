@@ -171,9 +171,29 @@ import { ElMessage, ElMessageBox } from 'element-plus'
 import ConsoleLayout from '~/components/layout/ConsoleLayout.vue'
 import SearchBar from '~/components/console/SearchBar.vue'
 import RepoGuard from '~/components/console/RepoGuard.vue'
-import { useLocalFS, type MediaFile as LocalMediaFile } from '~/composables/useLocalFS'
+import { useStorage } from '~/composables/useStorage'
+import { useRepoStore } from '~/stores/repo'
+import type { MediaFile } from '~/types/article'
 
-const localFS = useLocalFS()
+const storage = useStorage()
+const repoStore = useRepoStore()
+
+// 计算属性：检查当前存储是否就绪
+const isStorageReady = computed(() => {
+  const repo = repoStore.currentRepo
+  if (repo.id === 'local') {
+    return storage.hasArticlesAccess.value
+  }
+  return repo.connected
+})
+
+// 独立的文件类型判断函数
+const getFileType = (name: string): 'image' | 'video' | 'other' => {
+  const ext = name.split('.').pop()?.toLowerCase() || ''
+  if (['jpg', 'jpeg', 'png', 'gif', 'svg', 'webp', 'bmp'].includes(ext)) return 'image'
+  if (['mp4', 'webm', 'mov', 'avi'].includes(ext)) return 'video'
+  return 'other'
+}
 
 const viewMode = ref<'grid' | 'list'>('grid')
 const filterType = ref('all')
@@ -182,9 +202,9 @@ const showUploadDialog = ref(false)
 const uploading = ref(false)
 const loading = ref(false)
 const pendingFiles = ref<File[]>([])
-const files = ref<LocalMediaFile[]>([])
+const files = ref<MediaFile[]>([])
 
-const hasMediaAccess = computed(() => localFS.hasMediaAccess.value || localFS.hasArticlesAccess.value)
+const hasMediaAccess = computed(() => storage.hasMediaAccess.value)
 
 const filteredFiles = computed(() => {
   let result = [...files.value]
@@ -205,14 +225,10 @@ const filteredFiles = computed(() => {
 const getFileIcon = (type: string) => {
   const icons: Record<string, string> = {
     image: 'image',
-    video: '🎬',
+    video: 'video',
     other: 'file'
   }
   return icons[type] || 'file'
-}
-
-const getFileType = (name: string) => {
-  return localFS.getFileType(name)
 }
 
 const formatFileSize = (bytes: number) => {
@@ -223,19 +239,19 @@ const formatFileSize = (bytes: number) => {
   return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i]
 }
 
-const copyUrl = (file: LocalMediaFile) => {
-  navigator.clipboard.writeText(file.name)
-  ElMessage.success('文件名已复制到剪贴板')
+const copyUrl = (file: MediaFile) => {
+  navigator.clipboard.writeText(file.url)
+  ElMessage.success('链接已复制到剪贴板')
 }
 
-const deleteFile = async (file: LocalMediaFile) => {
+const deleteFile = async (file: MediaFile) => {
   ElMessageBox.confirm(`确定要删除 ${file.name} 吗？`, '提示', {
     confirmButtonText: '确定',
     cancelButtonText: '取消',
     type: 'warning'
   }).then(async () => {
     try {
-      await localFS.deleteMediaFile(file.name)
+      await storage.deleteMediaFile(file.name)
       files.value = files.value.filter(f => f.id !== file.id)
       // 释放 URL
       if (file.url.startsWith('blob:')) {
@@ -244,7 +260,7 @@ const deleteFile = async (file: LocalMediaFile) => {
       ElMessage.success('删除成功')
     } catch (err) {
       console.error('删除文件失败:', err)
-      ElMessage.error('删除失败')
+      ElMessage.error('删除失败: ' + (err instanceof Error ? err.message : '未知错误'))
     }
   }).catch(() => {})
 }
@@ -266,7 +282,7 @@ const uploadFiles = async () => {
   uploading.value = true
   try {
     for (const file of pendingFiles.value) {
-      const filename = await localFS.saveImage(file)
+      const filename = await storage.saveImage(file)
       // 重新加载文件列表
       await loadMediaFiles()
     }
@@ -275,14 +291,14 @@ const uploadFiles = async () => {
     pendingFiles.value = []
   } catch (err) {
     console.error('上传失败:', err)
-    ElMessage.error('上传失败')
+    ElMessage.error('上传失败: ' + (err instanceof Error ? err.message : '未知错误'))
   } finally {
     uploading.value = false
   }
 }
 
 const loadMediaFiles = async () => {
-  if (!localFS.hasArticlesAccess.value) return
+  if (!isStorageReady.value) return
 
   loading.value = true
   try {
@@ -292,10 +308,10 @@ const loadMediaFiles = async () => {
         URL.revokeObjectURL(f.url)
       }
     })
-    files.value = await localFS.loadMediaFiles()
+    files.value = await storage.loadMediaFiles()
   } catch (err) {
     console.error('加载媒体文件失败:', err)
-    ElMessage.error('加载媒体文件失败')
+    ElMessage.error('加载媒体文件失败: ' + (err instanceof Error ? err.message : '未知错误'))
   } finally {
     loading.value = false
   }
@@ -306,7 +322,7 @@ onMounted(() => {
 })
 
 // 监听权限状态变化，重新加载媒体文件
-watch(() => localFS.hasArticlesAccess.value, (hasAccess) => {
+watch(() => isStorageReady.value, (hasAccess) => {
   if (hasAccess) {
     loadMediaFiles()
   } else {

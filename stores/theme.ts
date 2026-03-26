@@ -1,5 +1,4 @@
 import { defineStore } from 'pinia'
-import { ref } from 'vue'
 
 export type ThemeColor = 'purple' | 'blue' | 'green' | 'orange' | 'pink' | 'cyan' | 'red' | 'indigo'
 export type ThemeMode = 'dark' | 'light'
@@ -151,96 +150,95 @@ export const fullThemeSchemes: Record<ThemeColor, { dark: FullThemeColors; light
   indigo: { dark: buildTheme('indigo', 'dark'), light: buildTheme('indigo', 'light') }
 }
 
-export const useThemeStore = defineStore('theme', () => {
-  const currentColor = ref<ThemeColor>('purple')
-  const currentMode = ref<ThemeMode>('dark')
-  const isInitialized = ref(false)
+export const useThemeStore = defineStore('theme', {
+  state: () => ({
+    currentColor: 'purple' as ThemeColor,
+    currentMode: 'dark' as ThemeMode,
+    isInitialized: false
+  }),
 
-  const setThemeColor = (color: ThemeColor) => {
-    currentColor.value = color
-    applyTheme()
-    try {
-      if (typeof localStorage !== 'undefined') {
-        localStorage.setItem('theme-color', color)
-      }
-    } catch (e) {
-      console.warn('无法保存主题颜色到 localStorage:', e)
-    }
-  }
+  getters: {
+    fullThemeSchemes: () => fullThemeSchemes
+  },
 
-  const setThemeMode = (mode: ThemeMode) => {
-    currentMode.value = mode
-    applyTheme()
-    try {
-      if (typeof localStorage !== 'undefined') {
-        localStorage.setItem('theme-mode', mode)
-      }
-    } catch (e) {
-      console.warn('无法保存主题模式到 localStorage:', e)
-    }
-  }
-
-  const applyTheme = () => {
-    const colors = fullThemeSchemes[currentColor.value][currentMode.value]
-    if (typeof document !== 'undefined' && document.documentElement) {
-      const root = document.documentElement
-      root.style.setProperty('--color-primary', colors.primary)
-      root.style.setProperty('--color-primary-dark', colors.primaryDark)
-      root.style.setProperty('--color-secondary', colors.secondary)
-      root.style.setProperty('--color-accent', colors.accent)
-      root.style.setProperty('--color-success', colors.success)
-      root.style.setProperty('--color-warning', colors.warning)
-      root.style.setProperty('--color-error', colors.error)
-      root.style.setProperty('--color-info', colors.info)
-      root.style.setProperty('--color-background', colors.background)
-      root.style.setProperty('--color-surface', colors.surface)
-      root.style.setProperty('--color-surface-light', colors.surfaceLight)
-      root.style.setProperty('--color-text', colors.text)
-      root.style.setProperty('--color-text-muted', colors.textMuted)
-      root.style.setProperty('--color-text-inverse', colors.textInverse)
-      root.style.setProperty('--color-border', colors.border)
-      root.style.setProperty('--color-border-light', colors.borderLight)
-
-      // 设置 data-theme-mode 属性用于 CSS 选择器
-      root.setAttribute('data-theme-mode', currentMode.value)
-    }
-  }
-
-  const initTheme = () => {
-    try {
-      if (typeof localStorage !== 'undefined') {
-        const savedColor = localStorage.getItem('theme-color') as ThemeColor
-        const savedMode = localStorage.getItem('theme-mode') as ThemeMode
-
-        if (savedColor && fullThemeSchemes[savedColor]) {
-          currentColor.value = savedColor
+  actions: {
+    setThemeColor(color: ThemeColor) {
+      this.currentColor = color
+      this.applyTheme()
+      try {
+        if (typeof localStorage !== 'undefined') {
+          localStorage.setItem('theme-color', color)
         }
-        if (savedMode && ['dark', 'light'].includes(savedMode)) {
-          currentMode.value = savedMode
-        }
-        applyTheme()
-        isInitialized.value = true
+      } catch (e) {
+        console.warn('无法保存主题颜色到 localStorage:', e)
       }
-    } catch (e) {
-      console.warn('无法从 localStorage 读取主题配置:', e)
-      // 使用默认主题
-      applyTheme()
-      isInitialized.value = true
+    },
+
+    setThemeMode(mode: ThemeMode) {
+      this.currentMode = mode
+      this.applyTheme()
+      try {
+        if (typeof localStorage !== 'undefined') {
+          localStorage.setItem('theme-mode', mode)
+        }
+      } catch (e) {
+        console.warn('无法保存主题模式到 localStorage:', e)
+      }
+    },
+
+    applyTheme() {
+      const colors = fullThemeSchemes[this.currentColor][this.currentMode]
+      if (typeof document !== 'undefined' && document.documentElement) {
+        const root = document.documentElement
+        root.style.setProperty('--color-primary', colors.primary)
+        root.style.setProperty('--color-primary-dark', colors.primaryDark)
+        root.style.setProperty('--color-secondary', colors.secondary)
+        root.style.setProperty('--color-accent', colors.accent)
+        root.style.setProperty('--color-success', colors.success)
+        root.style.setProperty('--color-warning', colors.warning)
+        root.style.setProperty('--color-error', colors.error)
+        root.style.setProperty('--color-info', colors.info)
+        root.style.setProperty('--color-background', colors.background)
+        root.style.setProperty('--color-surface', colors.surface)
+        root.style.setProperty('--color-surface-light', colors.surfaceLight)
+        root.style.setProperty('--color-text', colors.text)
+        root.style.setProperty('--color-text-muted', colors.textMuted)
+        root.style.setProperty('--color-text-inverse', colors.textInverse)
+        root.style.setProperty('--color-border', colors.border)
+        root.style.setProperty('--color-border-light', colors.borderLight)
+
+        // 设置 data-theme-mode 属性用于 CSS 选择器
+        root.setAttribute('data-theme-mode', this.currentMode)
+      }
+    },
+
+    initTheme() {
+      try {
+        if (typeof localStorage !== 'undefined') {
+          const savedColor = localStorage.getItem('theme-color') as ThemeColor
+          const savedMode = localStorage.getItem('theme-mode') as ThemeMode
+
+          if (savedColor && fullThemeSchemes[savedColor]) {
+            this.currentColor = savedColor
+          }
+          if (savedMode && ['dark', 'light'].includes(savedMode)) {
+            this.currentMode = savedMode
+          }
+          this.applyTheme()
+          this.isInitialized = true
+        }
+      } catch (e) {
+        console.warn('无法从 localStorage 读取主题配置:', e)
+        // 使用默认主题
+        this.applyTheme()
+        this.isInitialized = true
+      }
+    },
+
+    toggleMode() {
+      this.setThemeMode(this.currentMode === 'dark' ? 'light' : 'dark')
     }
-  }
+  },
 
-  const toggleMode = () => {
-    setThemeMode(currentMode.value === 'dark' ? 'light' : 'dark')
-  }
-
-  return {
-    currentColor,
-    currentMode,
-    fullThemeSchemes,
-    isInitialized,
-    setThemeColor,
-    setThemeMode,
-    toggleMode,
-    initTheme
-  }
+  persist: true
 })

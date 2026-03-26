@@ -76,13 +76,7 @@ const isContentEmpty = (): boolean => {
 
 // 暴露方法给父组件
 defineExpose({
-  isContentEmpty,
-  getEditorInstance: () => {
-    if (props.format === 'html' && htmlEditorRef.value) {
-      return htmlEditorRef.value.getEditorInstance?.()
-    }
-    return null
-  }
+  isContentEmpty
 })
 </script>
 

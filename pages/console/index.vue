@@ -111,7 +111,7 @@
                 </div>
                 <div class="text-center">
                   <div class="text-2xl font-bold text-[rgb(var(--color-primary))]">
-                    {{ tags.length > 0 ? tags.sort((a, b) => b.count - a.count)[0].count : 0 }}
+                    {{ tags.length > 0 ? tags.sort((a, b) => b.count - a.count)[0]?.count ?? 0 : 0 }}
                   </div>
                   <div class="text-sm text-[rgb(var(--color-text-muted))]">最多使用</div>
                 </div>
@@ -136,10 +136,12 @@ import { Loading } from '@element-plus/icons-vue'
 import { ElMessage } from 'element-plus'
 import ConsoleLayout from '~/components/layout/ConsoleLayout.vue'
 import RepoGuard from '~/components/console/RepoGuard.vue'
-import { useLocalFS } from '~/composables/useLocalFS'
+import { useStorage } from '~/composables/useStorage'
+import { useRepoStore } from '~/stores/repo'
 import type { Article } from '~/types/article'
 
-const localFS = useLocalFS()
+const storage = useStorage()
+const repoStore = useRepoStore()
 
 const loading = ref(false)
 const articles = ref<Article[]>([])
@@ -186,15 +188,24 @@ const tags = computed<Tag[]>(() => {
     .sort((a, b) => b.count - a.count)
 })
 
+// 计算属性：检查当前存储是否就绪
+const isStorageReady = computed(() => {
+  const repo = repoStore.currentRepo
+  if (repo.id === 'local') {
+    return storage.hasArticlesAccess.value
+  }
+  return repo.connected
+})
+
 const loadArticles = async () => {
-  if (!localFS.hasArticlesAccess.value) return
+  if (!isStorageReady.value) return
 
   loading.value = true
   try {
-    articles.value = await localFS.loadArticles()
+    articles.value = await storage.loadArticles()
   } catch (err) {
     console.error('加载文章失败:', err)
-    ElMessage.error('加载文章失败')
+    ElMessage.error('加载文章失败: ' + (err instanceof Error ? err.message : '未知错误'))
   } finally {
     loading.value = false
   }
@@ -205,7 +216,7 @@ onMounted(() => {
 })
 
 // 监听权限状态变化，重新加载文章
-watch(() => localFS.hasArticlesAccess.value, (hasAccess) => {
+watch(() => isStorageReady.value, (hasAccess) => {
   if (hasAccess) {
     loadArticles()
   } else {
