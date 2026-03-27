@@ -32,5 +32,12 @@ export default defineNuxtConfig({
     cssPath: '~/assets/css/tailwind.css',
     configPath: 'tailwind.config.ts',
     exposeConfig: true
+  },
+  // 添加路径别名
+  alias: {
+    '~core': '/core',
+    '~providers': '/providers',
+    '~services': '/services',
+    '~ui': '/ui'
   }
 })
