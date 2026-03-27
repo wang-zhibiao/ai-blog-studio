@@ -75,3 +75,12 @@ export type {
 } from './fs'
 
 export { FileSystemError as FileSystemErrorClass } from './fs'
+
+// ==================== Responsive ====================
+export type {
+  Breakpoint,
+  BreakpointValues,
+  ResponsiveState
+} from './responsive'
+
+export { breakpoints } from './responsive'
