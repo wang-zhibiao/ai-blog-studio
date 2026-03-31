@@ -281,6 +281,202 @@ function createLocalFS() {
     await mediaDir.removeEntry(filename)
   }
 
+  // 加载元数据
+  const loadArticlesMeta = async (): Promise<ArticleMeta[]> => {
+    syncHandles()
+    if (!state.articlesDirHandle) {
+      throw createFileSystemError('请先配置文章目录', 'DIRECTORY_NOT_FOUND')
+    }
+    try {
+      const metaHandle = await state.articlesDirHandle.getFileHandle('meta.json', { create: false })
+      const file = await metaHandle.getFile()
+      const content = await file.text()
+      const data = JSON.parse(content) as ArticleMeta[]
+      return Array.isArray(data) ? data : []
+    } catch (err: any) {
+      if (err.name === 'NotFoundError') {
+        return []
+      }
+      console.warn('读取 meta.json 失败:', err)
+      return []
+    }
+  }
+
+  // 保存元数据
+  const saveArticlesMeta = async (articlesMeta: ArticleMeta[]): Promise<void> => {
+    syncHandles()
+    if (!state.articlesDirHandle) {
+      throw createFileSystemError('请先配置文章目录', 'DIRECTORY_NOT_FOUND')
+    }
+    const content = JSON.stringify(articlesMeta, null, 2)
+    const metaHandle = await state.articlesDirHandle.getFileHandle('meta.json', { create: true })
+    const writable = await metaHandle.createWritable()
+    await writable.write(content)
+    await writable.close()
+  }
+
+  // 加载文章列表
+  const loadArticles = async (): Promise<Article[]> => {
+    const articles: Article[] = []
+    try {
+      const articlesMeta = await loadArticlesMeta()
+      if (articlesMeta.length === 0) return []
+
+      const articlePromises = articlesMeta.map(async (meta) => {
+        try {
+          const parsed = parseFileName(meta.fileName)
+          const title = parsed?.title || 'Untitled'
+          let content = ''
+
+          const fileHandle = await state.articlesDirHandle!.getFileHandle(meta.fileName, { create: false })
+          const file = await fileHandle.getFile()
+          content = await file.text()
+
+          return { id: meta.id, title, meta, content } as Article
+        } catch (err) {
+          console.warn(`加载文章失败: ${meta.fileName}`, err)
+          return null
+        }
+      })
+
+      const results = await Promise.all(articlePromises)
+      articles.push(...results.filter((a): a is Article => a !== null))
+    } catch (err) {
+      console.error('读取文章列表失败:', err)
+    }
+
+    articles.sort((a, b) => new Date(b.meta.updatedAt).getTime() - new Date(a.meta.updatedAt).getTime())
+    return articles
+  }
+
+  // 保存文章
+  const saveArticle = async (article: Omit<Article, 'dirHandle'>): Promise<Article> => {
+    syncHandles()
+    if (!state.articlesDirHandle) {
+      throw createFileSystemError('请先配置文章目录', 'DIRECTORY_NOT_FOUND')
+    }
+
+    const now = new Date().toISOString()
+    const articlesMeta = await loadArticlesMeta()
+
+    const newFileName = generateFileName(
+      article.title,
+      article.meta.category,
+      article.meta.createdAt,
+      article.meta.contentFormat
+    )
+
+    const existingIndex = articlesMeta.findIndex((m) => m.id === article.id)
+    let meta: ArticleMeta
+
+    if (existingIndex >= 0) {
+      const oldMeta = articlesMeta[existingIndex]
+      const oldFileName = oldMeta.fileName
+
+      if (oldFileName !== newFileName) {
+        try {
+          await state.articlesDirHandle.removeEntry(oldFileName)
+        } catch {
+          // 忽略删除失败
+        }
+      }
+
+      meta = {
+        ...oldMeta,
+        fileName: newFileName,
+        updatedAt: now,
+        publishedAt: article.meta.status === 'published' ? article.meta.publishedAt || now : article.meta.publishedAt,
+        status: article.meta.status,
+        contentFormat: article.meta.contentFormat,
+        category: article.meta.category,
+        tags: article.meta.tags,
+        excerpt: article.meta.excerpt,
+        cover: article.meta.cover
+      }
+      articlesMeta[existingIndex] = meta
+    } else {
+      meta = {
+        id: article.id || generateArticleId(),
+        fileName: newFileName,
+        createdAt: article.meta.createdAt || now,
+        updatedAt: now,
+        publishedAt: article.meta.status === 'published' ? now : null,
+        status: article.meta.status,
+        contentFormat: article.meta.contentFormat,
+        category: article.meta.category,
+        tags: article.meta.tags,
+        excerpt: article.meta.excerpt,
+        cover: article.meta.cover,
+        views: 0,
+        pinned: false,
+        order: 0
+      }
+      articlesMeta.push(meta)
+    }
+
+    if (article.content.trim()) {
+      const fileHandle = await state.articlesDirHandle.getFileHandle(newFileName, { create: true })
+      const writable = await fileHandle.createWritable()
+      await writable.write(article.content)
+      await writable.close()
+    }
+
+    await saveArticlesMeta(articlesMeta)
+
+    return { ...article, id: meta.id, meta }
+  }
+
+  // 删除文章
+  const deleteArticle = async (id: string): Promise<void> => {
+    syncHandles()
+    if (!state.articlesDirHandle) {
+      throw createFileSystemError('请先配置文章目录', 'DIRECTORY_NOT_FOUND')
+    }
+
+    const articlesMeta = await loadArticlesMeta()
+    const index = articlesMeta.findIndex((m) => m.id === id)
+
+    if (index >= 0) {
+      const meta = articlesMeta[index]
+
+      try {
+        await state.articlesDirHandle.removeEntry(meta.fileName)
+      } catch {
+        // 忽略删除失败
+      }
+
+      articlesMeta.splice(index, 1)
+      await saveArticlesMeta(articlesMeta)
+    }
+  }
+
+  // 获取单篇文章
+  const getArticle = async (id: string): Promise<Article | null> => {
+    syncHandles()
+    if (!state.articlesDirHandle) {
+      throw createFileSystemError('请先配置文章目录', 'DIRECTORY_NOT_FOUND')
+    }
+
+    const articlesMeta = await loadArticlesMeta()
+    const meta = articlesMeta.find((m) => m.id === id)
+
+    if (!meta) return null
+
+    try {
+      const parsed = parseFileName(meta.fileName)
+      const title = parsed?.title || 'Untitled'
+
+      const fileHandle = await state.articlesDirHandle.getFileHandle(meta.fileName, { create: false })
+      const file = await fileHandle.getFile()
+      const content = await file.text()
+
+      return { id: meta.id, title, meta, content }
+    } catch (err) {
+      console.warn(`获取文章失败: ${meta.fileName}`, err)
+      return null
+    }
+  }
+
   // 同步句柄
   syncHandles()
 
@@ -311,10 +507,10 @@ function createLocalFS() {
     getFileType,
 
     // 文章操作（Local FS 实现）
-    loadArticles: async () => { throw createFileSystemError('Not implemented', 'UNKNOWN_ERROR') },
-    saveArticle: async () => { throw createFileSystemError('Not implemented', 'UNKNOWN_ERROR') },
-    deleteArticle: async () => { throw createFileSystemError('Not implemented', 'UNKNOWN_ERROR') },
-    getArticle: async () => { throw createFileSystemError('Not implemented', 'UNKNOWN_ERROR') }
+    loadArticles,
+    saveArticle,
+    deleteArticle,
+    getArticle
   }
 }
 

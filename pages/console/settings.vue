@@ -156,7 +156,8 @@
 
             <el-form :model="aiConfig" label-position="top" class="max-w-lg">
               <el-form-item label="AI 服务提供商">
-                <el-select v-model="aiConfig.provider" class="w-full">
+                <el-select v-model="aiConfig.provider" class="w-full" @change="handleProviderChange">
+                  <el-option label="Ollama (本地)" value="ollama" />
                   <el-option label="OpenAI (GPT)" value="openai" />
                   <el-option label="Anthropic (Claude)" value="anthropic" />
                   <el-option label="DeepSeek" value="deepseek" />
@@ -567,10 +568,7 @@ const remoteRepos = computed(() => [
 ])
 
 const aiConfig = ref({
-  provider: 'openai',
-  apiKey: '',
-  baseUrl: '',
-  model: 'gpt-4o'
+  ...aiStore.config
 })
 
 const userConfig = ref({
@@ -937,8 +935,13 @@ const connectRepo = (repo: any) => {
   }
 }
 
+const handleProviderChange = (provider: string) => {
+  aiStore.setProvider(provider as any)
+  aiConfig.value = { ...aiStore.config }
+}
+
 const saveAIConfig = () => {
-  console.log('保存 AI 配置:', aiConfig.value)
+  aiStore.updateConfig(aiConfig.value)
   ElMessage.success('AI 配置已保存')
 }
 
@@ -949,6 +952,9 @@ const saveUserConfig = () => {
 
 onMounted(async () => {
   storageStore.init()
+
+  // 从 store 初始化 AI 配置
+  aiConfig.value = { ...aiStore.config }
 
   // 从 URL 参数初始化标签
   const tabFromQuery = route.query.tab as string
